@@ -55,7 +55,6 @@ fun AppNavigation(
                 onImportCsv = onImportCsv,
                 onStatusChange = onStatusChange,
                 onDeleteJob = onDeleteJob,
-                onOpenUrl = onOpenUrl,
                 onEditJob = onEditJob,
                 onRestoreJob = onRestoreJob,
                 onMessageShown = onMessageShown,

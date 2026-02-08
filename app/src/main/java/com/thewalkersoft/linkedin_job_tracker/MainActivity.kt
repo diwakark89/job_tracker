@@ -20,6 +20,7 @@ import com.thewalkersoft.linkedin_job_tracker.navigation.AppNavigation
 import com.thewalkersoft.linkedin_job_tracker.ui.screens.JobListScreen
 import com.thewalkersoft.linkedin_job_tracker.ui.theme.LinkedIn_Job_TrackerTheme
 import com.thewalkersoft.linkedin_job_tracker.viewmodel.JobViewModel
+import androidx.core.net.toUri
 
 class MainActivity : ComponentActivity() {
     private val viewModel: JobViewModel by viewModels()
@@ -71,7 +72,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun openUrl(url: String) {
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+        val intent = Intent(Intent.ACTION_VIEW, url.toUri())
         startActivity(intent)
     }
 }
@@ -135,7 +136,6 @@ private fun JobListScreenPreview() {
             onImportCsv = {},
             onStatusChange = { _, _ -> },
             onDeleteJob = {},
-            onOpenUrl = {},
             onEditJob = { _, _, _, _ -> },
             modifier = Modifier.fillMaxSize()
         )

@@ -7,7 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -36,7 +36,6 @@ fun JobListScreen(
     onImportCsv: (android.net.Uri) -> Unit,
     onStatusChange: (JobEntity, JobStatus) -> Unit,
     onDeleteJob: (Long) -> Unit,
-    onOpenUrl: (String) -> Unit,
     onEditJob: (JobEntity, String, String, String) -> Unit,
     onRestoreJob: (JobEntity) -> Unit = {},
     onMessageShown: () -> Unit = {},
@@ -104,8 +103,8 @@ fun JobListScreen(
                                     Box {
                                         IconButton(onClick = { isStatusMenuOpen = true }) {
                                             Icon(
-                                                imageVector = Icons.Default.Menu,
-                                                contentDescription = "Filter by status",
+                                                imageVector = Icons.Default.FilterList,
+                                                contentDescription = "Filter",
                                                 tint = if (statusFilter != null) {
                                                     MaterialTheme.colorScheme.primary
                                                 } else {
@@ -205,7 +204,6 @@ fun JobListScreen(
                             job = job,
                             onRequestDelete = { pendingDeleteJob = job },
                             onStatusChange = { status -> onStatusChange(job, status) },
-                            onOpenUrl = onOpenUrl,
                             onJobClick = { onJobClick(job.id) }
                         )
                     }
@@ -271,7 +269,6 @@ fun SwipeToDismissBox(
     job: JobEntity,
     onRequestDelete: () -> Unit,
     onStatusChange: (JobStatus) -> Unit,
-    onOpenUrl: (String) -> Unit,
     onJobClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -307,7 +304,6 @@ fun SwipeToDismissBox(
         JobCard(
             job = job,
             onStatusChange = onStatusChange,
-            onOpenUrl = onOpenUrl,
             onJobClick = onJobClick
         )
     }
