@@ -25,6 +25,9 @@ function doPost(e) {
     const sheet = getTargetSheet();
     const data = JSON.parse(e.postData.contents);
 
+    // Normalize URL once for consistent matching.
+    data.jobUrl = normalizeJobUrl(data.jobUrl);
+
     // Check if this is a delete or update request
     const action = e.parameter.action;
 
@@ -89,7 +92,7 @@ function handleUpdateJob(sheet, data) {
     }
 
     // Find the row by Job URL (Column B)
-    const urls = sheet.getRange(2, 2, lastRow - 1, 1).getValues().flat();
+    const urls = sheet.getRange(2, 2, lastRow - 1, 1).getValues().flat().map(normalizeJobUrl);
     const rowIndex = urls.indexOf(data.jobUrl);
 
     if (rowIndex === -1) {
@@ -124,7 +127,7 @@ function handleDeleteJob(sheet, data) {
     }
 
     // Find the row by Job URL (Column B)
-    const urls = sheet.getRange(2, 2, lastRow - 1, 1).getValues().flat();
+    const urls = sheet.getRange(2, 2, lastRow - 1, 1).getValues().flat().map(normalizeJobUrl);
     const rowIndex = urls.indexOf(data.jobUrl);
 
     if (rowIndex === -1) {
@@ -192,4 +195,8 @@ function doGet() {
     return ContentService.createTextOutput(JSON.stringify({"error": error.toString()}))
       .setMimeType(ContentService.MimeType.JSON);
   }
+}
+
+function normalizeJobUrl(value) {
+  return value ? value.toString().trim() : "";
 }

@@ -10,7 +10,7 @@ private const val DEPLOYMENT_ID =
     "AKfycbzUE5aItxZ6LAgb9KaEp7EAxpHqsKMucs2CLWVp7eM6u9Imz8s_0PVns6BlD8_jf1PE-A"
 
 object RetrofitClient {
-    private const val BASE_URL = "https://script.google.com/macros/s/$DEPLOYMENT_ID/exec/"
+    private const val BASE_URL = "https://script.google.com/macros/s/$DEPLOYMENT_ID/"
 
     val instance: GoogleSheetApiService by lazy {
         // Create Gson with lenient mode to handle edge cases

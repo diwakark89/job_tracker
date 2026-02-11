@@ -266,10 +266,17 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
 
                 if (response.isSuccessful) {
                     val body = response.body()
-                    Log.d("DeleteJob", "✅ Job deleted from Google Sheets: ${job.companyName}")
-                    Log.d("DeleteJob", "Response body: $body")
-                    _message.value = "✅ Job deleted and synced to Google Sheets"
-                    updateSyncTimestamp()
+                    val result = body?.result?.lowercase(Locale.US)
+                    if (result == "success") {
+                        Log.d("DeleteJob", "✅ Job deleted from Google Sheets: ${job.companyName}")
+                        Log.d("DeleteJob", "Response body: $body")
+                        _message.value = "✅ Job deleted and synced to Google Sheets"
+                        updateSyncTimestamp()
+                    } else {
+                        Log.w("DeleteJob", "⚠️ Delete call succeeded but script returned: ${body?.message}")
+                        Log.w("DeleteJob", "Response body: $body")
+                        _message.value = "⚠️ Job deleted locally but Google Sheets returned: ${body?.message ?: "Unknown error"}"
+                    }
                 } else {
                     val errorBody = response.errorBody()?.string()
                     Log.w("DeleteJob", "⚠️ Job deleted locally but sync response: ${response.code()}")
