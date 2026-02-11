@@ -2,10 +2,17 @@ package com.thewalkersoft.linkedin_job_tracker.ui.screens
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.MoreVert
@@ -14,6 +21,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import com.thewalkersoft.linkedin_job_tracker.data.JobEntity
 import com.thewalkersoft.linkedin_job_tracker.data.JobStatus
@@ -30,6 +38,8 @@ fun JobListScreen(
     statusFilter: JobStatus?,
     isScraping: Boolean,
     message: String?,
+    lastSyncTime: String,
+    onSyncFromCloud: () -> Unit,
     onSearchQueryChange: (String) -> Unit,
     onStatusFilterChange: (JobStatus?) -> Unit,
     onExportCsv: (android.net.Uri) -> Unit,
@@ -75,97 +85,138 @@ fun JobListScreen(
         }
     }
 
+    val syncRotation = if (isScraping) {
+        val transition = rememberInfiniteTransition(label = "syncRotation")
+        val angle by transition.animateFloat(
+            initialValue = 0f,
+            targetValue = 360f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 800, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart
+            ),
+            label = "syncRotationAngle"
+        )
+        angle
+    } else {
+        0f
+    }
+
     Box(modifier = modifier.fillMaxSize()) {
         Scaffold(
             topBar = {
-                SearchBar(
-                    inputField = {
-                        SearchBarDefaults.InputField(
-                            query = searchQuery,
-                            onQueryChange = onSearchQueryChange,
-                            onSearch = { isSearchActive = false },
-                            expanded = isSearchActive,
-                            onExpandedChange = { isSearchActive = it },
-                            placeholder = {
-                                Text(
-                                    text = if (statusFilter == null) {
-                                        "Search by company name"
-                                    } else {
-                                        "Search in ${statusFilter.name.replace("_", " ")}".lowercase()
-                                            .replaceFirstChar { it.uppercase() }
-                                    }
-                                )
-                            },
-                            leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
-                            trailingIcon = {
-                                Row {
-                                    // Filter Icon
-                                    Box {
-                                        IconButton(onClick = { isStatusMenuOpen = true }) {
-                                            Icon(
-                                                imageVector = Icons.Default.FilterList,
-                                                contentDescription = "Filter",
-                                                tint = if (statusFilter != null) {
-                                                    MaterialTheme.colorScheme.primary
-                                                } else {
-                                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                                }
-                                            )
+                Column {
+                    SearchBar(
+                        inputField = {
+                            SearchBarDefaults.InputField(
+                                query = searchQuery,
+                                onQueryChange = onSearchQueryChange,
+                                onSearch = { isSearchActive = false },
+                                expanded = isSearchActive,
+                                onExpandedChange = { isSearchActive = it },
+                                placeholder = {
+                                    Text(
+                                        text = if (statusFilter == null) {
+                                            "Search by company name"
+                                        } else {
+                                            "Search in ${statusFilter.name.replace("_", " ")}".lowercase()
+                                                .replaceFirstChar { it.uppercase() }
                                         }
-                                        DropdownMenu(
-                                            expanded = isStatusMenuOpen,
-                                            onDismissRequest = { isStatusMenuOpen = false }
-                                        ) {
-                                            statusOptions.forEach { status ->
-                                                val label = status?.name?.replace("_", " ") ?: "All Statuses"
+                                    )
+                                },
+                                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+                                trailingIcon = {
+                                    Row {
+                                        // Filter Icon
+                                        Box {
+                                            IconButton(onClick = { isStatusMenuOpen = true }) {
+                                                Icon(
+                                                    imageVector = Icons.Default.FilterList,
+                                                    contentDescription = "Filter",
+                                                    tint = if (statusFilter != null) {
+                                                        MaterialTheme.colorScheme.primary
+                                                    } else {
+                                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                                    }
+                                                )
+                                            }
+                                            DropdownMenu(
+                                                expanded = isStatusMenuOpen,
+                                                onDismissRequest = { isStatusMenuOpen = false }
+                                            ) {
+                                                statusOptions.forEach { status ->
+                                                    val label = status?.name?.replace("_", " ") ?: "All Statuses"
+                                                    DropdownMenuItem(
+                                                        text = { Text(label) },
+                                                        onClick = {
+                                                            onStatusFilterChange(status)
+                                                            isStatusMenuOpen = false
+                                                        }
+                                                    )
+                                                }
+                                            }
+                                        }
+
+                                        // More Options Icon
+                                        Box {
+                                            IconButton(onClick = { isMoreMenuOpen = true }) {
+                                                Icon(
+                                                    imageVector = Icons.Default.MoreVert,
+                                                    contentDescription = "More options"
+                                                )
+                                            }
+                                            DropdownMenu(
+                                                expanded = isMoreMenuOpen,
+                                                onDismissRequest = { isMoreMenuOpen = false }
+                                            ) {
                                                 DropdownMenuItem(
-                                                    text = { Text(label) },
+                                                    text = { Text("📤 Export CSV") },
                                                     onClick = {
-                                                        onStatusFilterChange(status)
-                                                        isStatusMenuOpen = false
+                                                        exportCsvLauncher.launch("linkedin_jobs_export.csv")
+                                                        isMoreMenuOpen = false
+                                                    }
+                                                )
+                                                DropdownMenuItem(
+                                                    text = { Text("📥 Import CSV") },
+                                                    onClick = {
+                                                        importCsvLauncher.launch(arrayOf("text/csv", "text/comma-separated-values", "application/csv", "*/*"))
+                                                        isMoreMenuOpen = false
                                                     }
                                                 )
                                             }
                                         }
                                     }
-
-                                    // More Options Icon
-                                    Box {
-                                        IconButton(onClick = { isMoreMenuOpen = true }) {
-                                            Icon(
-                                                imageVector = Icons.Default.MoreVert,
-                                                contentDescription = "More options"
-                                            )
-                                        }
-                                        DropdownMenu(
-                                            expanded = isMoreMenuOpen,
-                                            onDismissRequest = { isMoreMenuOpen = false }
-                                        ) {
-                                            DropdownMenuItem(
-                                                text = { Text("📤 Export CSV") },
-                                                onClick = {
-                                                    exportCsvLauncher.launch("linkedin_jobs_export.csv")
-                                                    isMoreMenuOpen = false
-                                                }
-                                            )
-                                            DropdownMenuItem(
-                                                text = { Text("📥 Import CSV") },
-                                                onClick = {
-                                                    importCsvLauncher.launch(arrayOf("text/csv", "text/comma-separated-values", "application/csv", "*/*"))
-                                                    isMoreMenuOpen = false
-                                                }
-                                            )
-                                        }
-                                    }
                                 }
-                            }
+                            )
+                        },
+                        expanded = isSearchActive,
+                        onExpandedChange = { isSearchActive = it },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        // Search suggestions can be added here if needed
+                    }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Last Synced: $lastSyncTime",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                    },
-                    expanded = isSearchActive,
-                    onExpandedChange = { isSearchActive = it },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    // Search suggestions can be added here if needed
+                        IconButton(
+                            onClick = onSyncFromCloud,
+                            enabled = !isScraping
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CloudSync,
+                                contentDescription = "Sync",
+                                modifier = Modifier.graphicsLayer { rotationZ = syncRotation }
+                            )
+                        }
+                    }
                 }
             },
             snackbarHost = { SnackbarHost(snackbarHostState) }

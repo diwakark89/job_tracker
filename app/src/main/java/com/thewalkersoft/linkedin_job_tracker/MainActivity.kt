@@ -1,7 +1,6 @@
 package com.thewalkersoft.linkedin_job_tracker
 
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -13,6 +12,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.net.toUri
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
 import com.thewalkersoft.linkedin_job_tracker.data.JobEntity
 import com.thewalkersoft.linkedin_job_tracker.data.JobStatus
@@ -20,7 +21,6 @@ import com.thewalkersoft.linkedin_job_tracker.navigation.AppNavigation
 import com.thewalkersoft.linkedin_job_tracker.ui.screens.JobListScreen
 import com.thewalkersoft.linkedin_job_tracker.ui.theme.LinkedIn_Job_TrackerTheme
 import com.thewalkersoft.linkedin_job_tracker.viewmodel.JobViewModel
-import androidx.core.net.toUri
 
 class MainActivity : ComponentActivity() {
     private val viewModel: JobViewModel by viewModels()
@@ -40,6 +40,7 @@ class MainActivity : ComponentActivity() {
                 val statusFilter by viewModel.statusFilter.collectAsState()
                 val isScraping by viewModel.isScraping.collectAsState()
                 val message by viewModel.message.collectAsState()
+                val lastSyncTime by viewModel.lastSyncTime.collectAsStateWithLifecycle()
 
                 AppNavigation(
                     navController = navController,
@@ -48,6 +49,8 @@ class MainActivity : ComponentActivity() {
                     statusFilter = statusFilter,
                     isScraping = isScraping,
                     message = message,
+                    lastSyncTime = lastSyncTime,
+                    onSyncFromCloud = viewModel::syncFromSheet,
                     onSearchQueryChange = viewModel::onSearchQueryChange,
                     onStatusFilterChange = viewModel::onStatusFilterChange,
                     onExportCsv = viewModel::exportJobsToCsv,
@@ -130,6 +133,8 @@ private fun JobListScreenPreview() {
             statusFilter = null,
             isScraping = false,
             message = null,
+            lastSyncTime = "Never",
+            onSyncFromCloud = {},
             onSearchQueryChange = {},
             onStatusFilterChange = {},
             onExportCsv = {},

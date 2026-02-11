@@ -11,7 +11,8 @@ data class JobEntity(
     val jobUrl: String,
     val jobDescription: String,
     val status: JobStatus = JobStatus.SAVED,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
+    val lastModified: Long = System.currentTimeMillis() // Track last modification for sync
 )
 
 enum class JobStatus {

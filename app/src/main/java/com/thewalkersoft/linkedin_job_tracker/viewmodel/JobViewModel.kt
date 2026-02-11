@@ -3,12 +3,15 @@ package com.thewalkersoft.linkedin_job_tracker.viewmodel
 import android.app.Application
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.thewalkersoft.linkedin_job_tracker.client.RetrofitClient
 import com.thewalkersoft.linkedin_job_tracker.data.JobDatabase
 import com.thewalkersoft.linkedin_job_tracker.data.JobEntity
 import com.thewalkersoft.linkedin_job_tracker.data.JobStatus
 import com.thewalkersoft.linkedin_job_tracker.scraper.JobScraper
+import com.thewalkersoft.linkedin_job_tracker.sync.SyncService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -22,6 +25,7 @@ import java.util.Locale
 
 class JobViewModel(application: Application) : AndroidViewModel(application) {
     private val dao = JobDatabase.getDatabase(application).jobDao()
+    private val syncService = SyncService(dao)
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
@@ -70,6 +74,66 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun saveAndSyncJob(job: JobEntity) {
+        viewModelScope.launch {
+            // 1. Save locally for instant UI feedback
+            dao.upsertJob(job)
+
+            // 2. Sync to Google Sheets
+            try {
+                val response = RetrofitClient.instance.uploadJob(job)
+                if (response.isSuccessful) {
+                    Log.d("Sync", "✅ Successfully uploaded job '${job.companyName}' to Google Sheets")
+                    _message.value = "✅ Job synced to Google Sheets successfully!"
+                } else {
+                    Log.w("Sync", "⚠️ Upload response: ${response.code()} - ${response.message()}")
+                    _message.value = "⚠️ Job saved locally, but sync returned: ${response.message()}"
+                }
+            } catch (e: Exception) {
+                Log.e("Sync", "❌ Sync failed: ${e.message}", e)
+                _message.value = "⚠️ Job saved locally, but failed to sync: ${e.message}"
+            }
+        }
+    }
+
+    fun syncFromSheet() {
+        viewModelScope.launch {
+            _isScraping.value = true // Reuse the scraper spinner for sync feedback
+            try {
+                val syncResult = syncService.performBidirectionalSync()
+
+                updateSyncTimestamp() // Success!
+
+                // Create detailed sync message
+                val message = buildString {
+                    append("✅ Sync completed!\n")
+                    if (syncResult.uploaded > 0) append("⬆️ ${syncResult.uploaded} uploaded\n")
+                    if (syncResult.downloaded > 0) append("⬇️ ${syncResult.downloaded} downloaded\n")
+                    if (syncResult.updated > 0) append("🔄 ${syncResult.updated} updated\n")
+                    if (syncResult.conflicts > 0) append("⚠️ ${syncResult.conflicts} conflicts resolved (app took precedence)")
+                }
+
+                Log.d("Sync", message)
+                _message.value = message.trim()
+            } catch (e: Exception) {
+                Log.e("Sync", "Sync failed: ${e.message}", e)
+                _message.value = "❌ Sync failed: ${e.message ?: "Unknown error"}"
+            } finally {
+                _isScraping.value = false
+            }
+        }
+    }
+
+    private val _lastSyncTime = MutableStateFlow("Never")
+    val lastSyncTime: StateFlow<String> = _lastSyncTime.asStateFlow()
+
+    private fun updateSyncTimestamp() {
+        val formatter = SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault())
+        _lastSyncTime.value = formatter.format(Date())
+        // Optional: Save this value to SharedPreferences or DataStore
+        // so it persists when the app restarts
+    }
+
     private fun parseAndScrapeLinkedInJob(text: String) {
         // Parse text like: "Check out this job at [Company]: [Link]"
         // or just a LinkedIn URL
@@ -110,8 +174,7 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
                     jobDescription = description,
                     status = JobStatus.SAVED
                 )
-                dao.upsertJob(job)
-                _message.value = "Job saved successfully!"
+                saveAndSyncJob(job)
             } catch (e: Exception) {
                 _message.value = "Failed to save job: ${e.message}"
             } finally {
@@ -122,19 +185,51 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
 
     fun updateJobStatus(job: JobEntity, newStatus: JobStatus) {
         viewModelScope.launch {
-            dao.upsertJob(job.copy(status = newStatus))
+            val updatedJob = job.copy(
+                status = newStatus,
+                lastModified = System.currentTimeMillis()
+            )
+            dao.upsertJob(updatedJob)
+
+            // Sync status change to Google Sheets
+            try {
+                val response = RetrofitClient.instance.updateJob(updatedJob)
+                if (response.isSuccessful) {
+                    Log.d("Sync", "✅ Status updated to ${newStatus.name} and synced to Google Sheets for ${job.companyName}")
+                } else {
+                    Log.w("Sync", "⚠️ Status updated locally but sync response: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                Log.w("Sync", "⚠️ Status updated locally but failed to sync: ${e.message}")
+                // Status is already saved locally, so it's not a critical failure
+            }
         }
     }
 
     fun updateJob(job: JobEntity, companyName: String, jobUrl: String, jobDescription: String) {
         viewModelScope.launch {
-            dao.upsertJob(
-                job.copy(
-                    companyName = companyName,
-                    jobUrl = jobUrl,
-                    jobDescription = jobDescription
-                )
+            val updatedJob = job.copy(
+                companyName = companyName,
+                jobUrl = jobUrl,
+                jobDescription = jobDescription,
+                lastModified = System.currentTimeMillis()
             )
+            dao.upsertJob(updatedJob)
+
+            // Sync job changes to Google Sheets
+            try {
+                val response = RetrofitClient.instance.updateJob(updatedJob)
+                if (response.isSuccessful) {
+                    Log.d("Sync", "✅ Job details updated and synced to Google Sheets for ${companyName}")
+                    _message.value = "✅ Job updated and synced to Google Sheets"
+                } else {
+                    Log.w("Sync", "⚠️ Job updated locally but sync response: ${response.code()}")
+                    _message.value = "⚠️ Job updated locally but sync returned: ${response.message()}"
+                }
+            } catch (e: Exception) {
+                Log.w("Sync", "⚠️ Job updated locally but failed to sync: ${e.message}")
+                _message.value = "⚠️ Job updated locally but sync to Google Sheets failed"
+            }
         }
     }
 
@@ -146,7 +241,7 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
 
     fun restoreJob(job: JobEntity) {
         viewModelScope.launch {
-            dao.upsertJob(job)
+            saveAndSyncJob(job)
         }
     }
 
@@ -221,13 +316,13 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
                         // Parse timestamp: new format -> legacy date -> legacy date-time -> unix
                         val timestamp = try {
                             dateFormat.parse(timestampText)?.time ?: System.currentTimeMillis()
-                        } catch (e: Exception) {
+                        } catch (_: Exception) {
                             try {
                                 legacyDateFormat.parse(timestampText)?.time ?: System.currentTimeMillis()
-                            } catch (e2: Exception) {
+                            } catch (_: Exception) {
                                 try {
                                     legacyDateTimeFormat.parse(timestampText)?.time ?: System.currentTimeMillis()
-                                } catch (e3: Exception) {
+                                } catch (_: Exception) {
                                     timestampText.toLongOrNull() ?: System.currentTimeMillis()
                                 }
                             }
@@ -243,7 +338,7 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
                             status = status,
                             timestamp = timestamp
                         )
-                        dao.upsertJob(job)
+                        saveAndSyncJob(job)
                         importedCount++
                     }
                 }
