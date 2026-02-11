@@ -25,6 +25,18 @@ function doPost(e) {
     const sheet = getTargetSheet();
     const data = JSON.parse(e.postData.contents);
 
+    // Check if this is a delete or update request
+    const action = e.parameter.action;
+
+    if (action === 'deleteJob') {
+      return handleDeleteJob(sheet, data);
+    }
+
+    if (action === 'updateJob') {
+      return handleUpdateJob(sheet, data);
+    }
+
+    // Default: Upload new job (or update if URL exists)
     const lastRow = sheet.getLastRow();
     let existingRowIndex = -1;
 
@@ -63,6 +75,72 @@ function doPost(e) {
       .setMimeType(ContentService.MimeType.JSON);
   } finally {
     lock.releaseLock();
+  }
+}
+
+function handleUpdateJob(sheet, data) {
+  try {
+    const lastRow = sheet.getLastRow();
+
+    if (lastRow <= 1) {
+      // No jobs exist, can't update
+      return ContentService.createTextOutput(JSON.stringify({"result":"error", "message": "No jobs to update"}))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // Find the row by Job URL (Column B)
+    const urls = sheet.getRange(2, 2, lastRow - 1, 1).getValues().flat();
+    const rowIndex = urls.indexOf(data.jobUrl);
+
+    if (rowIndex === -1) {
+      return ContentService.createTextOutput(JSON.stringify({"result":"error", "message": "Job not found"}))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // Update the row
+    const row = rowIndex + 2;
+    sheet.getRange(row, 3).setValue(data.companyName);
+    sheet.getRange(row, 4).setValue(data.jobDescription);
+    sheet.getRange(row, 5).setValue(data.status);
+    sheet.getRange(row, 6).setValue(new Date());
+    sheet.getRange(row, 7).setValue(data.lastModified || new Date().getTime());
+
+    return ContentService.createTextOutput(JSON.stringify({"result":"success", "message": "Job updated successfully"}))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({"result":"error", "message": error.toString()}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function handleDeleteJob(sheet, data) {
+  try {
+    const lastRow = sheet.getLastRow();
+
+    if (lastRow <= 1) {
+      return ContentService.createTextOutput(JSON.stringify({"result":"error", "message": "No jobs to delete"}))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // Find the row by Job URL (Column B)
+    const urls = sheet.getRange(2, 2, lastRow - 1, 1).getValues().flat();
+    const rowIndex = urls.indexOf(data.jobUrl);
+
+    if (rowIndex === -1) {
+      return ContentService.createTextOutput(JSON.stringify({"result":"error", "message": "Job not found"}))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // Delete the row (rowIndex + 2 because: +1 for header, +1 for 0-based to 1-based)
+    sheet.deleteRow(rowIndex + 2);
+
+    return ContentService.createTextOutput(JSON.stringify({"result":"success", "message": "Job deleted successfully"}))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({"result":"error", "message": error.toString()}))
+      .setMimeType(ContentService.MimeType.JSON);
   }
 }
 

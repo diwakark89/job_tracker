@@ -17,6 +17,11 @@ interface GoogleSheetApiService {
         @Body job: JobEntity
     ): Response<GoogleSheetResponse>
 
+    @POST("exec?action=deleteJob") // Delete job from sheet
+    suspend fun deleteJob(
+        @Body job: JobEntity
+    ): Response<GoogleSheetResponse>
+
     @GET("exec") // Download all jobs
     suspend fun downloadJobs(): List<JobEntity>
 }

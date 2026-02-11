@@ -85,6 +85,7 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
                 if (response.isSuccessful) {
                     Log.d("Sync", "✅ Successfully uploaded job '${job.companyName}' to Google Sheets")
                     _message.value = "✅ Job synced to Google Sheets successfully!"
+                    updateSyncTimestamp()
                 } else {
                     Log.w("Sync", "⚠️ Upload response: ${response.code()} - ${response.message()}")
                     _message.value = "⚠️ Job saved locally, but sync returned: ${response.message()}"
@@ -191,16 +192,20 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
             )
             dao.upsertJob(updatedJob)
 
-            // Sync status change to Google Sheets
+            // Sync status change to Google Sheets automatically
             try {
                 val response = RetrofitClient.instance.updateJob(updatedJob)
                 if (response.isSuccessful) {
                     Log.d("Sync", "✅ Status updated to ${newStatus.name} and synced to Google Sheets for ${job.companyName}")
+                    _message.value = "✅ Status updated and synced to Google Sheets"
+                    updateSyncTimestamp()
                 } else {
                     Log.w("Sync", "⚠️ Status updated locally but sync response: ${response.code()}")
+                    _message.value = "⚠️ Status updated locally but sync failed"
                 }
             } catch (e: Exception) {
                 Log.w("Sync", "⚠️ Status updated locally but failed to sync: ${e.message}")
+                _message.value = "⚠️ Status updated locally but sync to Google Sheets failed"
                 // Status is already saved locally, so it's not a critical failure
             }
         }
@@ -222,6 +227,7 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
                 if (response.isSuccessful) {
                     Log.d("Sync", "✅ Job details updated and synced to Google Sheets for ${companyName}")
                     _message.value = "✅ Job updated and synced to Google Sheets"
+                    updateSyncTimestamp()
                 } else {
                     Log.w("Sync", "⚠️ Job updated locally but sync response: ${response.code()}")
                     _message.value = "⚠️ Job updated locally but sync returned: ${response.message()}"
@@ -235,7 +241,46 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
 
     fun deleteJob(jobId: Long) {
         viewModelScope.launch {
+            Log.d("DeleteJob", "🗑️ Starting deletion process for jobId: $jobId")
+
+            // Get the job before deleting it to have its data for sync
+            val job = dao.getAllJobsOnce().firstOrNull { it.id == jobId }
+
+            if (job == null) {
+                Log.e("DeleteJob", "❌ Job not found in database with id: $jobId")
+                _message.value = "❌ Job not found"
+                return@launch
+            }
+
+            Log.d("DeleteJob", "📋 Found job: ${job.companyName} (URL: ${job.jobUrl})")
+
+            // Delete locally
             dao.deleteJob(jobId)
+            Log.d("DeleteJob", "✅ Job deleted from local database")
+
+            // Sync deletion to Google Sheets
+            try {
+                Log.d("DeleteJob", "☁️ Attempting to sync deletion to Google Sheets...")
+                val response = RetrofitClient.instance.deleteJob(job)
+                Log.d("DeleteJob", "📡 Response code: ${response.code()}, isSuccessful: ${response.isSuccessful}")
+
+                if (response.isSuccessful) {
+                    val body = response.body()
+                    Log.d("DeleteJob", "✅ Job deleted from Google Sheets: ${job.companyName}")
+                    Log.d("DeleteJob", "Response body: $body")
+                    _message.value = "✅ Job deleted and synced to Google Sheets"
+                    updateSyncTimestamp()
+                } else {
+                    val errorBody = response.errorBody()?.string()
+                    Log.w("DeleteJob", "⚠️ Job deleted locally but sync response: ${response.code()}")
+                    Log.w("DeleteJob", "Error body: $errorBody")
+                    _message.value = "⚠️ Job deleted locally but sync returned: ${response.message()}"
+                }
+            } catch (e: Exception) {
+                Log.e("DeleteJob", "⚠️ Job deleted locally but failed to sync: ${e.message}", e)
+                e.printStackTrace()
+                _message.value = "⚠️ Job deleted locally but sync to Google Sheets failed: ${e.message}"
+            }
         }
     }
 
