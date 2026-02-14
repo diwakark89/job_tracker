@@ -75,6 +75,32 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    /**
+     * Generate the next available ID by finding the max ID from both local DB and Google Sheets
+     */
+    private suspend fun getNextJobId(): Long {
+        try {
+            // Get max ID from local database
+            val localMaxId = dao.getMaxId() ?: 0L
+
+            // Get max ID from Google Sheets
+            val sheetMaxId = try {
+                val sheetJobs = RetrofitClient.instance.downloadJobs()
+                sheetJobs.maxOfOrNull { it.id } ?: 0L
+            } catch (e: Exception) {
+                Log.w("NextJobId", "Failed to get max ID from sheet: ${e.message}")
+                0L
+            }
+
+            // Return the next ID after the maximum
+            return maxOf(localMaxId, sheetMaxId) + 1L
+        } catch (e: Exception) {
+            Log.e("NextJobId", "Error calculating next ID: ${e.message}")
+            // Fallback: just get local max and add 1
+            return (dao.getMaxId() ?: 0L) + 1L
+        }
+    }
+
     fun saveAndSyncJob(job: JobEntity) {
         viewModelScope.launch {
             // 1. Save locally for instant UI feedback
@@ -170,7 +196,12 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
                 }
 
                 val description = JobScraper.scrapeJobDescription(url)
+
+                // Generate next available ID
+                val nextId = getNextJobId()
+
                 val job = JobEntity(
+                    id = nextId,
                     companyName = companyName,
                     jobUrl = url,
                     jobDescription = description,
@@ -382,8 +413,15 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
 
                         // Check if job already exists
                         val existing = dao.getJobByUrl(jobUrl)
+
+                        val jobId = if (existing != null) {
+                            existing.id
+                        } else {
+                            getNextJobId()
+                        }
+
                         val job = JobEntity(
-                            id = existing?.id ?: 0,
+                            id = jobId,
                             companyName = companyName,
                             jobUrl = jobUrl,
                             jobDescription = jobDescription,

@@ -24,4 +24,7 @@ interface JobDao {
 
     @Query("SELECT * FROM jobs WHERE jobUrl = :url LIMIT 1")
     suspend fun getJobByUrl(url: String): JobEntity?
+
+    @Query("SELECT MAX(id) FROM jobs")
+    suspend fun getMaxId(): Long?
 }
