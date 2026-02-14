@@ -19,6 +19,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.thewalkersoft.linkedin_job_tracker.data.JobEntity
 import com.thewalkersoft.linkedin_job_tracker.data.JobStatus
+import com.thewalkersoft.linkedin_job_tracker.data.displayName
 import com.thewalkersoft.linkedin_job_tracker.ui.components.EditJobDialog
 import com.thewalkersoft.linkedin_job_tracker.ui.theme.*
 import java.text.SimpleDateFormat
@@ -111,7 +112,7 @@ fun JobDetailsScreen(
                 ) {
                     JobStatus.entries.forEach { status ->
                         DropdownMenuItem(
-                            text = { Text(status.name.replace("_", " ")) },
+                            text = { Text(status.displayName()) },
                             onClick = {
                                 onStatusChange(status)
                                 showStatusMenu = false
@@ -233,7 +234,8 @@ private fun StatusChipLarge(
 ) {
     val containerColor = when (status) {
         JobStatus.OFFER -> JobOfferGreen.copy(alpha = 0.35f)
-        JobStatus.REJECTED -> JobRejectedRed.copy(alpha = 0.35f)
+        JobStatus.RESUME_REJECTED -> JobResumeRejectedRed.copy(alpha = 0.35f)
+        JobStatus.INTERVIEW_REJECTED -> JobInterviewRejectedRed.copy(alpha = 0.35f)
         JobStatus.INTERVIEWING -> JobInterviewingYellow.copy(alpha = 0.35f)
         JobStatus.APPLIED -> JobAppliedBlue.copy(alpha = 0.35f)
         JobStatus.SAVED -> JobSavedGray.copy(alpha = 0.35f)
@@ -246,7 +248,7 @@ private fun StatusChipLarge(
         onClick = onClick,
         label = {
             Text(
-                text = status.name.replace("_", " "),
+                text = status.displayName(),
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.widthIn(min = 100.dp)

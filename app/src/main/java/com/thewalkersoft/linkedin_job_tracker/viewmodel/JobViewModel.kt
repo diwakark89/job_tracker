@@ -10,6 +10,7 @@ import com.thewalkersoft.linkedin_job_tracker.client.RetrofitClient
 import com.thewalkersoft.linkedin_job_tracker.data.JobDatabase
 import com.thewalkersoft.linkedin_job_tracker.data.JobEntity
 import com.thewalkersoft.linkedin_job_tracker.data.JobStatus
+import com.thewalkersoft.linkedin_job_tracker.data.parseJobStatus
 import com.thewalkersoft.linkedin_job_tracker.scraper.JobScraper
 import com.thewalkersoft.linkedin_job_tracker.sync.SyncService
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -362,8 +363,7 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
                             return@forEach
                         }
 
-                        val status = runCatching { JobStatus.valueOf(statusText) }
-                            .getOrNull() ?: JobStatus.SAVED
+                        val status = parseJobStatus(statusText)
 
                         // Parse timestamp: new format -> legacy date -> legacy date-time -> unix
                         val timestamp = try {

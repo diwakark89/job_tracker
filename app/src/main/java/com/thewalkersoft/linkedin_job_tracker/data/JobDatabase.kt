@@ -56,7 +56,6 @@ class Converters {
 
     @TypeConverter
     fun toJobStatus(value: String): JobStatus {
-        return JobStatus.valueOf(value)
+        return parseJobStatus(value)
     }
 }
-

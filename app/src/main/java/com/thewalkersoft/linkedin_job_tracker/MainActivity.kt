@@ -122,7 +122,7 @@ private fun JobListScreenPreview() {
                 companyName = "Fabrikam",
                 jobUrl = "https://www.linkedin.com/jobs/view/654321",
                 jobDescription = "Another sample description for preview.",
-                status = JobStatus.REJECTED,
+                status = JobStatus.RESUME_REJECTED,
                 timestamp = System.currentTimeMillis() - 86_400_000
             )
         )

@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import com.thewalkersoft.linkedin_job_tracker.data.JobEntity
 import com.thewalkersoft.linkedin_job_tracker.data.JobStatus
+import com.thewalkersoft.linkedin_job_tracker.data.displayName
 import com.thewalkersoft.linkedin_job_tracker.ui.components.EditJobDialog
 import com.thewalkersoft.linkedin_job_tracker.ui.components.JobCard
 import com.thewalkersoft.linkedin_job_tracker.ui.components.LoadingOverlay
@@ -118,7 +119,7 @@ fun JobListScreen(
                                         text = if (statusFilter == null) {
                                             "Search by company name"
                                         } else {
-                                            "Search in ${statusFilter.name.replace("_", " ")}".lowercase()
+                                            "Search in ${statusFilter.displayName().lowercase()}"
                                                 .replaceFirstChar { it.uppercase() }
                                         }
                                     )
@@ -144,7 +145,7 @@ fun JobListScreen(
                                                 onDismissRequest = { isStatusMenuOpen = false }
                                             ) {
                                                 statusOptions.forEach { status ->
-                                                    val label = status?.name?.replace("_", " ") ?: "All Statuses"
+                                                    val label = status?.displayName() ?: "All Statuses"
                                                     DropdownMenuItem(
                                                         text = { Text(label) },
                                                         onClick = {
@@ -230,7 +231,7 @@ fun JobListScreen(
                         .padding(paddingValues),
                     contentAlignment = Alignment.Center
                 ) {
-                    val statusLabel = statusFilter?.name?.replace("_", " ")
+                    val statusLabel = statusFilter?.displayName()
                     val messageText = if (statusLabel == null) {
                         "No jobs found for \"$searchQuery\""
                     } else {

@@ -31,6 +31,8 @@ val OnDarkSurface = Color(0xFFFFFFFF)          // Light text on dark surfaces
 // ============================================================================
 val JobOfferGreen = Color(0xFF1B6E3A)          // Job offers - Dark green for high contrast
 val JobRejectedRed = Color(0xFFC41C1C)         // Rejections - Dark red for high contrast
+val JobInterviewRejectedRed = Color(0xFF9A1515) // Interview rejected - Deeper red
+val JobResumeRejectedRed = Color(0xFFD14646)    // Resume rejected - Lighter red
 val JobInterviewingYellow = Color(0xFF9C6E00)  // Interviewing - Dark gold/amber for high contrast
 val JobAppliedBlue = Color(0xFF0051BA)         // Applications - Dark blue for high contrast
 val JobSavedGray = Color(0xFF3F4550)           // Saved jobs - Dark gray for high contrast
@@ -38,4 +40,3 @@ val JobSavedGray = Color(0xFF3F4550)           // Saved jobs - Dark gray for hig
 // ERROR COLORS
 // ============================================================================
 val CriticalRed = Color(0xFFFF5252)            // Critical alerts/errors
-

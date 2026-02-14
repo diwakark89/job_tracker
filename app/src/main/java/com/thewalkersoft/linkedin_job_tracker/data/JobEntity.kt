@@ -20,6 +20,22 @@ enum class JobStatus {
     APPLIED,
     INTERVIEWING,
     OFFER,
-    REJECTED
+    RESUME_REJECTED,
+    INTERVIEW_REJECTED
 }
 
+fun JobStatus.displayName(): String {
+    return when (this) {
+        JobStatus.RESUME_REJECTED -> "RESUME-REJECTED"
+        JobStatus.INTERVIEW_REJECTED -> "INTERVIEW-REJECTED"
+        else -> name.replace("_", " ")
+    }
+}
+
+fun parseJobStatus(value: String): JobStatus {
+    val normalized = value.trim().uppercase().replace("-", "_")
+    return when (normalized) {
+        "REJECTED" -> JobStatus.RESUME_REJECTED
+        else -> runCatching { JobStatus.valueOf(normalized) }.getOrDefault(JobStatus.SAVED)
+    }
+}

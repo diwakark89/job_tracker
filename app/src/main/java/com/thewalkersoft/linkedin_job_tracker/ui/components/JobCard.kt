@@ -30,6 +30,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.thewalkersoft.linkedin_job_tracker.data.JobEntity
 import com.thewalkersoft.linkedin_job_tracker.data.JobStatus
+import com.thewalkersoft.linkedin_job_tracker.data.displayName
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -95,7 +96,7 @@ fun JobCard(
                     ) {
                         JobStatus.entries.forEach { status ->
                             DropdownMenuItem(
-                                text = { Text(status.name) },
+                                text = { Text(status.displayName()) },
                                 onClick = {
                                     onStatusChange(status)
                                     showStatusMenu = false
@@ -117,7 +118,8 @@ fun StatusChip(
 ) {
     val containerColor = when (status) {
         JobStatus.OFFER -> com.thewalkersoft.linkedin_job_tracker.ui.theme.JobOfferGreen.copy(alpha = 0.35f)
-        JobStatus.REJECTED -> com.thewalkersoft.linkedin_job_tracker.ui.theme.JobRejectedRed.copy(alpha = 0.35f)
+        JobStatus.RESUME_REJECTED -> com.thewalkersoft.linkedin_job_tracker.ui.theme.JobResumeRejectedRed.copy(alpha = 0.35f)
+        JobStatus.INTERVIEW_REJECTED -> com.thewalkersoft.linkedin_job_tracker.ui.theme.JobInterviewRejectedRed.copy(alpha = 0.35f)
         JobStatus.INTERVIEWING -> com.thewalkersoft.linkedin_job_tracker.ui.theme.JobInterviewingYellow.copy(alpha = 0.35f)
         JobStatus.APPLIED -> com.thewalkersoft.linkedin_job_tracker.ui.theme.JobAppliedBlue.copy(alpha = 0.35f)
         JobStatus.SAVED -> com.thewalkersoft.linkedin_job_tracker.ui.theme.JobSavedGray.copy(alpha = 0.35f)
@@ -130,17 +132,17 @@ fun StatusChip(
         onClick = onClick,
         label = {
             Text(
-                text = status.name,
+                text = status.displayName(),
+                style = MaterialTheme.typography.labelLarge,
                 textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.labelSmall,
-                modifier = Modifier.widthIn(min = 70.dp)
+                modifier = Modifier.widthIn(min = 90.dp)
             )
         },
-        modifier = modifier.height(24.dp),
         colors = FilterChipDefaults.filterChipColors(
             containerColor = containerColor,
             labelColor = contentColor
-        )
+        ),
+        modifier = modifier
     )
 }
 
