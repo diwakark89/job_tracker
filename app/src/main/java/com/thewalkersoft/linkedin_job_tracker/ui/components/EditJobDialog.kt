@@ -16,11 +16,12 @@ import com.thewalkersoft.linkedin_job_tracker.data.JobEntity
 fun EditJobDialog(
     job: JobEntity,
     onDismiss: () -> Unit,
-    onSave: (String, String, String) -> Unit,
+    onSave: (String, String, String, String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var companyName by remember { mutableStateOf(job.companyName) }
     var jobUrl by remember { mutableStateOf(job.jobUrl) }
+    var jobTitle by remember { mutableStateOf(job.jobTitle) }
     var jobDescription by remember { mutableStateOf(job.jobDescription) }
 
     var companyNameError by remember { mutableStateOf(false) }
@@ -108,6 +109,17 @@ fun EditJobDialog(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
+                    // Job Title Field
+                    OutlinedTextField(
+                        value = jobTitle,
+                        onValueChange = { jobTitle = it },
+                        label = { Text("Job Title") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
                     // Job Description Field
                     OutlinedTextField(
                         value = jobDescription,
@@ -142,7 +154,7 @@ fun EditJobDialog(
                             jobUrlError = !isJobUrlValid
 
                             if (isCompanyNameValid && isJobUrlValid) {
-                                onSave(companyName, jobUrl, jobDescription)
+                                onSave(companyName, jobUrl, jobTitle, jobDescription)
                             }
                         }
                     ) {

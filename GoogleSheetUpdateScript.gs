@@ -13,7 +13,7 @@ function getTargetSheet() {
 
   if (!sheet) {
     sheet = ss.insertSheet(TARGET_SHEET_NAME);
-    sheet.appendRow(["ID", "Job URL", "Company Name", "Description", "Status", "Last Updated", "Last Modified"]);
+    sheet.appendRow(["ID", "Job URL", "Company Name", "Job Title", "Description", "Status", "Last Updated", "Last Modified"]);
   }
   return sheet;
 }
@@ -53,16 +53,18 @@ function doPost(e) {
       // Update existing row
       const row = existingRowIndex + 2;
       sheet.getRange(row, 3).setValue(data.companyName);
-      sheet.getRange(row, 4).setValue(data.jobDescription);
-      sheet.getRange(row, 5).setValue(data.status);
-      sheet.getRange(row, 6).setValue(new Date());
-      sheet.getRange(row, 7).setValue(data.lastModified || new Date().getTime());
+      sheet.getRange(row, 4).setValue(data.jobTitle || "");
+      sheet.getRange(row, 5).setValue(data.jobDescription);
+      sheet.getRange(row, 6).setValue(data.status);
+      sheet.getRange(row, 7).setValue(new Date());
+      sheet.getRange(row, 8).setValue(data.lastModified || new Date().getTime());
     } else {
       // Append new row
       sheet.appendRow([
         data.id,
         data.jobUrl,
         data.companyName,
+        data.jobTitle || "",
         data.jobDescription,
         data.status,
         new Date(),
@@ -103,10 +105,11 @@ function handleUpdateJob(sheet, data) {
     // Update the row
     const row = rowIndex + 2;
     sheet.getRange(row, 3).setValue(data.companyName);
-    sheet.getRange(row, 4).setValue(data.jobDescription);
-    sheet.getRange(row, 5).setValue(data.status);
-    sheet.getRange(row, 6).setValue(new Date());
-    sheet.getRange(row, 7).setValue(data.lastModified || new Date().getTime());
+    sheet.getRange(row, 4).setValue(data.jobTitle || "");
+    sheet.getRange(row, 5).setValue(data.jobDescription);
+    sheet.getRange(row, 6).setValue(data.status);
+    sheet.getRange(row, 7).setValue(new Date());
+    sheet.getRange(row, 8).setValue(data.lastModified || new Date().getTime());
 
     return ContentService.createTextOutput(JSON.stringify({"result":"success", "message": "Job updated successfully"}))
       .setMimeType(ContentService.MimeType.JSON);
@@ -156,11 +159,25 @@ function doGet() {
       return ContentService.createTextOutput(JSON.stringify([])).setMimeType(ContentService.MimeType.JSON);
     }
 
+    const headers = rows[0];
     rows.shift(); // Remove headers
 
-    const json = rows.map(row => {
+    // Filter out completely empty rows
+    const validRows = rows.filter(row => {
+      // Check if row has at least a job URL (column B / index 1)
+      return row[1] && row[1].toString().trim() !== "";
+    });
+
+    // Detect if this is old format (without Job Title) or new format
+    const hasJobTitleColumn = headers.length >= 8 && headers[3] === "Job Title";
+
+    const json = validRows.map(row => {
       // Robust conversion for timestamp and lastModified
       const convertToTimestamp = (value) => {
+        // Handle empty strings and null values
+        if (!value || value === "") {
+          return new Date().getTime();
+        }
         if (typeof value === 'number') {
           return value; // Already a number
         } else if (value instanceof Date) {
@@ -168,7 +185,8 @@ function doGet() {
         } else if (typeof value === 'string') {
           // Try parsing as Date string, otherwise return current time
           try {
-            return new Date(value).getTime();
+            const parsedTime = new Date(value).getTime();
+            return isNaN(parsedTime) ? new Date().getTime() : parsedTime;
           } catch (e) {
             return new Date().getTime();
           }
@@ -177,15 +195,54 @@ function doGet() {
         }
       };
 
-      return {
-        id: row[0],
-        jobUrl: row[1],
-        companyName: row[2],
-        jobDescription: row[3],
-        status: row[4],
-        timestamp: convertToTimestamp(row[5]),
-        lastModified: convertToTimestamp(row[6])
+      // Safe value getter with empty string fallback
+      const getValue = (index, defaultValue = "") => {
+        return row[index] !== undefined && row[index] !== null && row[index] !== ""
+          ? row[index]
+          : defaultValue;
       };
+
+      // Safe ID converter - ensures it's always a valid number
+      const getIdValue = (index) => {
+        const val = row[index];
+        if (val === undefined || val === null || val === "") {
+          return 0;
+        }
+        if (typeof val === 'number') {
+          return val;
+        }
+        if (typeof val === 'string') {
+          const parsed = parseInt(val, 10);
+          return isNaN(parsed) ? 0 : parsed;
+        }
+        return 0;
+      };
+
+      if (hasJobTitleColumn) {
+        // New format with Job Title column
+        return {
+          id: getIdValue(0),
+          jobUrl: getValue(1, ""),
+          companyName: getValue(2, "Unknown Company"),
+          jobTitle: getValue(3, ""),
+          jobDescription: getValue(4, ""),
+          status: getValue(5, "SAVED"),
+          timestamp: convertToTimestamp(row[6]),
+          lastModified: convertToTimestamp(row[7])
+        };
+      } else {
+        // Old format without Job Title column - map columns differently
+        return {
+          id: getIdValue(0),
+          jobUrl: getValue(1, ""),
+          companyName: getValue(2, "Unknown Company"),
+          jobTitle: "", // No job title in old format
+          jobDescription: getValue(3, ""),
+          status: getValue(4, "SAVED"),
+          timestamp: convertToTimestamp(row[5]),
+          lastModified: convertToTimestamp(row[6])
+        };
+      }
     });
 
     return ContentService.createTextOutput(JSON.stringify(json))
@@ -200,3 +257,38 @@ function doGet() {
 function normalizeJobUrl(value) {
   return value ? value.toString().trim() : "";
 }
+
+/**
+ * Migration Helper: Add Job Title column to existing sheet
+ * Run this ONCE if you have existing data in the old format
+ * This will insert a "Job Title" column between "Company Name" and "Description"
+ */
+function migrateToNewFormat() {
+  try {
+    const sheet = getTargetSheet();
+    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+
+    // Check if Job Title column already exists
+    if (headers.length >= 8 && headers[3] === "Job Title") {
+      return "Migration not needed - Job Title column already exists";
+    }
+
+    // Insert a new column after "Company Name" (column C, so insert at position 4)
+    sheet.insertColumnAfter(3);
+
+    // Set the header for the new column
+    sheet.getRange(1, 4).setValue("Job Title");
+
+    // Fill existing rows with empty job titles
+    const lastRow = sheet.getLastRow();
+    if (lastRow > 1) {
+      const emptyTitles = Array(lastRow - 1).fill([""]);
+      sheet.getRange(2, 4, lastRow - 1, 1).setValues(emptyTitles);
+    }
+
+    return "Migration successful! Job Title column added at position D";
+  } catch (error) {
+    return "Migration failed: " + error.toString();
+  }
+}
+

@@ -47,7 +47,7 @@ fun JobListScreen(
     onImportCsv: (android.net.Uri) -> Unit,
     onStatusChange: (JobEntity, JobStatus) -> Unit,
     onDeleteJob: (Long) -> Unit,
-    onEditJob: (JobEntity, String, String, String) -> Unit,
+    onEditJob: (JobEntity, String, String, String, String) -> Unit,
     onRestoreJob: (JobEntity) -> Unit = {},
     onMessageShown: () -> Unit = {},
     onJobClick: (Long) -> Unit = {},
@@ -304,8 +304,8 @@ fun JobListScreen(
             EditJobDialog(
                 job = job,
                 onDismiss = { editingJob = null },
-                onSave = { companyName, jobUrl, jobDescription ->
-                    onEditJob(job, companyName, jobUrl, jobDescription)
+                onSave = { companyName, jobUrl, jobTitle, jobDescription ->
+                    onEditJob(job, companyName, jobUrl, jobTitle, jobDescription)
                     editingJob = null
                 }
             )

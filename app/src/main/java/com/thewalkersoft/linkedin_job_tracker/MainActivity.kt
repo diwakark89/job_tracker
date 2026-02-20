@@ -58,8 +58,8 @@ class MainActivity : ComponentActivity() {
                     onStatusChange = { job, status -> viewModel.updateJobStatus(job, status) },
                     onDeleteJob = viewModel::deleteJob,
                     onOpenUrl = ::openUrl,
-                    onEditJob = { job, companyName, jobUrl, jobDescription ->
-                        viewModel.updateJob(job, companyName, jobUrl, jobDescription)
+                    onEditJob = { job, companyName, jobUrl, jobTitle, jobDescription ->
+                        viewModel.updateJob(job, companyName, jobUrl, jobTitle, jobDescription)
                     },
                     onRestoreJob = viewModel::restoreJob,
                     onMessageShown = viewModel::clearMessage,
@@ -90,6 +90,7 @@ private fun JobListScreenPreview() {
                 companyName = "Contoso",
                 jobUrl = "https://www.linkedin.com/jobs/view/123456",
                 jobDescription = "Sample job description for preview.",
+                jobTitle = "Senior Software Engineer",
                 status = JobStatus.INTERVIEWING,
                 timestamp = System.currentTimeMillis()
             ),
@@ -98,6 +99,7 @@ private fun JobListScreenPreview() {
                 companyName = "Fabrikam",
                 jobUrl = "https://www.linkedin.com/jobs/view/654321",
                 jobDescription = "Another sample description for preview.",
+                jobTitle = "Full Stack Developer",
                 status = JobStatus.SAVED,
                 timestamp = System.currentTimeMillis() - 86_400_000
             ),
@@ -106,6 +108,7 @@ private fun JobListScreenPreview() {
                 companyName = "Fabrikam",
                 jobUrl = "https://www.linkedin.com/jobs/view/654324",
                 jobDescription = "Another sample description for preview.",
+                jobTitle = "Product Manager",
                 status = JobStatus.OFFER,
                 timestamp = System.currentTimeMillis() - 86_400_000
             ),
@@ -114,6 +117,7 @@ private fun JobListScreenPreview() {
                 companyName = "Fabrikam",
                 jobUrl = "https://www.linkedin.com/jobs/view/654325",
                 jobDescription = "Another sample description for preview.",
+                jobTitle = "DevOps Engineer",
                 status = JobStatus.APPLIED,
                 timestamp = System.currentTimeMillis() - 86_400_000
             ),
@@ -122,6 +126,7 @@ private fun JobListScreenPreview() {
                 companyName = "Fabrikam",
                 jobUrl = "https://www.linkedin.com/jobs/view/654321",
                 jobDescription = "Another sample description for preview.",
+                jobTitle = "Data Scientist",
                 status = JobStatus.RESUME_REJECTED,
                 timestamp = System.currentTimeMillis() - 86_400_000
             )
@@ -141,7 +146,7 @@ private fun JobListScreenPreview() {
             onImportCsv = {},
             onStatusChange = { _, _ -> },
             onDeleteJob = {},
-            onEditJob = { _, _, _, _ -> },
+            onEditJob = { _, _, _, _, _ -> },
             modifier = Modifier.fillMaxSize()
         )
     }

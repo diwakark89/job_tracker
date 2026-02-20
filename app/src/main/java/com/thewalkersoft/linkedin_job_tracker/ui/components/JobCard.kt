@@ -61,6 +61,16 @@ fun JobCard(
                 style = MaterialTheme.typography.titleLarge
             )
 
+            // Job Title
+            if (job.jobTitle.isNotBlank()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = job.jobTitle,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+
             Spacer(modifier = Modifier.height(4.dp))
 
             // Timestamp

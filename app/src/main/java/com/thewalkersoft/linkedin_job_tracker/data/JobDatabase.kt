@@ -9,7 +9,7 @@ import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [JobEntity::class], version = 2, exportSchema = true)
+@Database(entities = [JobEntity::class], version = 3, exportSchema = true)
 @TypeConverters(Converters::class)
 abstract class JobDatabase : RoomDatabase() {
     abstract fun jobDao(): JobDao
@@ -32,6 +32,16 @@ abstract class JobDatabase : RoomDatabase() {
             }
         }
 
+        // Migration from version 2 to version 3: Add jobTitle column
+        private val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // Add jobTitle column with default value = empty string
+                database.execSQL(
+                    "ALTER TABLE jobs ADD COLUMN jobTitle TEXT NOT NULL DEFAULT ''"
+                )
+            }
+        }
+
         fun getDatabase(context: Context): JobDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -39,7 +49,7 @@ abstract class JobDatabase : RoomDatabase() {
                     JobDatabase::class.java,
                     "job_database"
                 )
-                .addMigrations(MIGRATION_1_2) // Add proper migration instead of destructive
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3) // Add both migrations
                 .build()
                 INSTANCE = instance
                 instance

@@ -168,23 +168,10 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
         val urlRegex = Regex("(https?://[^\\s]+)")
         val url = urlRegex.find(text)?.value ?: return
 
-        // Try to extract company name from the text
-        val companyRegex = Regex("at ([^:]+):|company/([^/\\s]+)")
-        val companyMatch = companyRegex.find(text)
-        val companyName = companyMatch?.groupValues?.getOrNull(1)?.trim()
-            ?: companyMatch?.groupValues?.getOrNull(2)?.trim()
-            ?: extractCompanyFromUrl(url)
-
-        scrapeAndSaveJob(url, companyName)
+        scrapeAndSaveJob(url)
     }
 
-    private fun extractCompanyFromUrl(url: String): String {
-        // Try to extract company from LinkedIn URL pattern
-        val companyRegex = Regex("/company/([^/?]+)")
-        return companyRegex.find(url)?.groupValues?.getOrNull(1) ?: "Unknown Company"
-    }
-
-    fun scrapeAndSaveJob(url: String, companyName: String) {
+    fun scrapeAndSaveJob(url: String) {
         viewModelScope.launch {
             _isScraping.value = true
             try {
@@ -195,16 +182,18 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
                     return@launch
                 }
 
-                val description = JobScraper.scrapeJobDescription(url)
+                // Scrape all job information at once
+                val jobInfo = JobScraper.scrapeJobInfo(url)
 
                 // Generate next available ID
                 val nextId = getNextJobId()
 
                 val job = JobEntity(
                     id = nextId,
-                    companyName = companyName,
+                    companyName = jobInfo.companyName,
                     jobUrl = url,
-                    jobDescription = description,
+                    jobDescription = jobInfo.description,
+                    jobTitle = jobInfo.jobTitle,
                     status = JobStatus.SAVED
                 )
                 saveAndSyncJob(job)
@@ -243,11 +232,12 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun updateJob(job: JobEntity, companyName: String, jobUrl: String, jobDescription: String) {
+    fun updateJob(job: JobEntity, companyName: String, jobUrl: String, jobTitle: String, jobDescription: String) {
         viewModelScope.launch {
             val updatedJob = job.copy(
                 companyName = companyName,
                 jobUrl = jobUrl,
+                jobTitle = jobTitle,
                 jobDescription = jobDescription,
                 lastModified = System.currentTimeMillis()
             )
@@ -385,9 +375,10 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
 
                         val companyName = fields.getOrNull(0).orEmpty().trim()
                         val jobUrl = fields.getOrNull(1).orEmpty().trim()
-                        val jobDescription = fields.getOrNull(2).orEmpty()
-                        val statusText = fields.getOrNull(3).orEmpty().trim()
-                        val timestampText = fields.getOrNull(4).orEmpty().trim()
+                        val jobTitle = fields.getOrNull(2).orEmpty().trim()
+                        val jobDescription = fields.getOrNull(3).orEmpty()
+                        val statusText = fields.getOrNull(4).orEmpty().trim()
+                        val timestampText = fields.getOrNull(5).orEmpty().trim()
 
                         if (companyName.isBlank() || jobUrl.isBlank()) {
                             skippedCount++
@@ -424,6 +415,7 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
                             id = jobId,
                             companyName = companyName,
                             jobUrl = jobUrl,
+                            jobTitle = jobTitle,
                             jobDescription = jobDescription,
                             status = status,
                             timestamp = timestamp

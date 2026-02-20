@@ -32,7 +32,7 @@ fun JobDetailsScreen(
     onNavigateBack: () -> Unit,
     onStatusChange: (JobStatus) -> Unit,
     onOpenUrl: (String) -> Unit,
-    onEdit: (String, String, String) -> Unit,
+    onEdit: (String, String, String, String) -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -81,6 +81,16 @@ fun JobDetailsScreen(
                 text = job.companyName,
                 style = MaterialTheme.typography.headlineMedium
             )
+
+            // Job Title
+            if (job.jobTitle.isNotBlank()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = job.jobTitle,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -217,8 +227,8 @@ fun JobDetailsScreen(
         EditJobDialog(
             job = job,
             onDismiss = { showEditDialog = false },
-            onSave = { companyName, jobUrl, jobDescription ->
-                onEdit(companyName, jobUrl, jobDescription)
+            onSave = { companyName, jobUrl, jobTitle, jobDescription ->
+                onEdit(companyName, jobUrl, jobTitle, jobDescription)
                 showEditDialog = false
             }
         )
@@ -319,7 +329,7 @@ fun JobDetailsScreenPreview() {
             onNavigateBack = {},
             onStatusChange = {},
             onOpenUrl = {},
-            onEdit = { _, _, _ -> },
+            onEdit = { _, _, _, _ -> },
             onDelete = {}
         )
     }

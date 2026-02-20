@@ -10,6 +10,7 @@ data class JobEntity(
     val companyName: String,
     val jobUrl: String,
     val jobDescription: String,
+    val jobTitle: String = "", // Job title from LinkedIn
     val status: JobStatus = JobStatus.SAVED,
     val timestamp: Long = System.currentTimeMillis(),
     val lastModified: Long = System.currentTimeMillis() // Track last modification for sync

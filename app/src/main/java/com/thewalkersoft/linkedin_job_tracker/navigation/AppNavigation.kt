@@ -33,7 +33,7 @@ fun AppNavigation(
     onStatusChange: (JobEntity, JobStatus) -> Unit,
     onDeleteJob: (Long) -> Unit,
     onOpenUrl: (String) -> Unit,
-    onEditJob: (JobEntity, String, String, String) -> Unit,
+    onEditJob: (JobEntity, String, String, String, String) -> Unit,
     onRestoreJob: (JobEntity) -> Unit,
     onMessageShown: () -> Unit,
     modifier: Modifier = Modifier
@@ -90,8 +90,8 @@ fun AppNavigation(
                         onStatusChange(job, newStatus)
                     },
                     onOpenUrl = onOpenUrl,
-                    onEdit = { companyName, jobUrl, jobDescription ->
-                        onEditJob(job, companyName, jobUrl, jobDescription)
+                    onEdit = { companyName, jobUrl, jobTitle, jobDescription ->
+                        onEditJob(job, companyName, jobUrl, jobTitle, jobDescription)
                     },
                     onDelete = {
                         onDeleteJob(job.id)
@@ -139,7 +139,7 @@ fun AppNavigationPreview() {
             onStatusChange = { _, _ -> },
             onDeleteJob = { _ -> },
             onOpenUrl = { _ -> },
-            onEditJob = { _, _, _, _ -> },
+            onEditJob = { _, _, _, _, _ -> },
             onRestoreJob = { _ -> },
             onMessageShown = {}
         )
