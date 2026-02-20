@@ -1,8 +1,10 @@
 package com.thewalkersoft.linkedin_job_tracker.client
 
+import android.util.Log
 import com.google.gson.GsonBuilder
 import com.thewalkersoft.linkedin_job_tracker.service.GoogleSheetApiService
 import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
@@ -26,7 +28,14 @@ object RetrofitClient {
             .create(GoogleSheetApiService::class.java)
     }
 
+    private val loggingInterceptor = HttpLoggingInterceptor { message ->
+        Log.d("HTTP", message)
+    }.apply {
+        level = HttpLoggingInterceptor.Level.BODY
+    }
+
     val okHttpClient = OkHttpClient.Builder()
+        .addInterceptor(loggingInterceptor)
         .followRedirects(true)
         .followSslRedirects(true)
         .build()

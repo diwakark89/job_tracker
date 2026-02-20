@@ -108,6 +108,11 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
 
             // 2. Sync to Google Sheets
             try {
+                Log.d("Sync", "📤 Uploading job to Google Sheets:")
+                Log.d("Sync", "   Company: ${job.companyName}")
+                Log.d("Sync", "   Job Title: '${job.jobTitle}'")
+                Log.d("Sync", "   URL: ${job.jobUrl}")
+
                 val response = RetrofitClient.instance.uploadJob(job)
                 if (response.isSuccessful) {
                     Log.d("Sync", "✅ Successfully uploaded job '${job.companyName}' to Google Sheets")
