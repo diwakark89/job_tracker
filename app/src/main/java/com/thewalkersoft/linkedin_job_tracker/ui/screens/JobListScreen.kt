@@ -1,7 +1,5 @@
 package com.thewalkersoft.linkedin_job_tracker.ui.screens
 
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -15,7 +13,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -43,8 +40,6 @@ fun JobListScreen(
     onSyncFromCloud: () -> Unit,
     onSearchQueryChange: (String) -> Unit,
     onStatusFilterChange: (JobStatus?) -> Unit,
-    onExportCsv: (android.net.Uri) -> Unit,
-    onImportCsv: (android.net.Uri) -> Unit,
     onStatusChange: (JobEntity, JobStatus) -> Unit,
     onDeleteJob: (Long) -> Unit,
     onEditJob: (JobEntity, String, String, String, String) -> Unit,
@@ -55,25 +50,12 @@ fun JobListScreen(
 ) {
     var isSearchActive by remember { mutableStateOf(false) }
     var isStatusMenuOpen by remember { mutableStateOf(false) }
-    var isMoreMenuOpen by remember { mutableStateOf(false) }
     var pendingDeleteJob by remember { mutableStateOf<JobEntity?>(null) }
     var editingJob by remember { mutableStateOf<JobEntity?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     val statusOptions = remember { listOf<JobStatus?>(null) + JobStatus.entries }
 
-    // CSV Export/Import Launchers
-    val exportCsvLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("text/csv")
-    ) { uri ->
-        uri?.let(onExportCsv)
-    }
-
-    val importCsvLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument()
-    ) { uri ->
-        uri?.let(onImportCsv)
-    }
 
     // Show message when it's available
     LaunchedEffect(message) {
@@ -126,61 +108,30 @@ fun JobListScreen(
                                 },
                                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
                                 trailingIcon = {
-                                    Row {
-                                        // Filter Icon
-                                        Box {
-                                            IconButton(onClick = { isStatusMenuOpen = true }) {
-                                                Icon(
-                                                    imageVector = Icons.Default.FilterList,
-                                                    contentDescription = "Filter",
-                                                    tint = if (statusFilter != null) {
-                                                        MaterialTheme.colorScheme.primary
-                                                    } else {
-                                                        MaterialTheme.colorScheme.onSurfaceVariant
-                                                    }
-                                                )
-                                            }
-                                            DropdownMenu(
-                                                expanded = isStatusMenuOpen,
-                                                onDismissRequest = { isStatusMenuOpen = false }
-                                            ) {
-                                                statusOptions.forEach { status ->
-                                                    val label = status?.displayName() ?: "All Statuses"
-                                                    DropdownMenuItem(
-                                                        text = { Text(label) },
-                                                        onClick = {
-                                                            onStatusFilterChange(status)
-                                                            isStatusMenuOpen = false
-                                                        }
-                                                    )
+                                    // Filter Icon
+                                    Box {
+                                        IconButton(onClick = { isStatusMenuOpen = true }) {
+                                            Icon(
+                                                imageVector = Icons.Default.FilterList,
+                                                contentDescription = "Filter",
+                                                tint = if (statusFilter != null) {
+                                                    MaterialTheme.colorScheme.primary
+                                                } else {
+                                                    MaterialTheme.colorScheme.onSurfaceVariant
                                                 }
-                                            }
+                                            )
                                         }
-
-                                        // More Options Icon
-                                        Box {
-                                            IconButton(onClick = { isMoreMenuOpen = true }) {
-                                                Icon(
-                                                    imageVector = Icons.Default.MoreVert,
-                                                    contentDescription = "More options"
-                                                )
-                                            }
-                                            DropdownMenu(
-                                                expanded = isMoreMenuOpen,
-                                                onDismissRequest = { isMoreMenuOpen = false }
-                                            ) {
+                                        DropdownMenu(
+                                            expanded = isStatusMenuOpen,
+                                            onDismissRequest = { isStatusMenuOpen = false }
+                                        ) {
+                                            statusOptions.forEach { status ->
+                                                val label = status?.displayName() ?: "All Statuses"
                                                 DropdownMenuItem(
-                                                    text = { Text("📤 Export CSV") },
+                                                    text = { Text(label) },
                                                     onClick = {
-                                                        exportCsvLauncher.launch("linkedin_jobs_export.csv")
-                                                        isMoreMenuOpen = false
-                                                    }
-                                                )
-                                                DropdownMenuItem(
-                                                    text = { Text("📥 Import CSV") },
-                                                    onClick = {
-                                                        importCsvLauncher.launch(arrayOf("text/csv", "text/comma-separated-values", "application/csv", "*/*"))
-                                                        isMoreMenuOpen = false
+                                                        onStatusFilterChange(status)
+                                                        isStatusMenuOpen = false
                                                     }
                                                 )
                                             }
