@@ -32,6 +32,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun JobListScreen(
     jobs: List<JobEntity>,
+    allJobs: List<JobEntity>,
     searchQuery: String,
     statusFilter: JobStatus?,
     isScraping: Boolean,
@@ -55,6 +56,16 @@ fun JobListScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     val statusOptions = remember { listOf<JobStatus?>(null) + JobStatus.entries }
+
+    // Calculate counts for each status
+    val statusCounts = remember(allJobs) {
+        val counts = mutableMapOf<JobStatus, Int>()
+        allJobs.forEach { job ->
+            counts[job.status] = (counts[job.status] ?: 0) + 1
+        }
+        counts
+    }
+    val totalCount = allJobs.size
 
 
     // Show message when it's available
@@ -127,8 +138,26 @@ fun JobListScreen(
                                         ) {
                                             statusOptions.forEach { status ->
                                                 val label = status?.displayName() ?: "All Statuses"
+                                                val count = if (status == null) {
+                                                    totalCount
+                                                } else {
+                                                    statusCounts[status] ?: 0
+                                                }
                                                 DropdownMenuItem(
-                                                    text = { Text(label) },
+                                                    text = {
+                                                        Row(
+                                                            modifier = Modifier.fillMaxWidth(),
+                                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                                            verticalAlignment = Alignment.CenterVertically
+                                                        ) {
+                                                            Text(label)
+                                                            Text(
+                                                                text = "($count)",
+                                                                style = MaterialTheme.typography.bodySmall,
+                                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                            )
+                                                        }
+                                                    },
                                                     onClick = {
                                                         onStatusFilterChange(status)
                                                         isStatusMenuOpen = false

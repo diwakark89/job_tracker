@@ -20,6 +20,7 @@ import com.thewalkersoft.linkedin_job_tracker.ui.theme.LinkedIn_Job_TrackerTheme
 fun AppNavigation(
     navController: NavHostController,
     jobs: List<JobEntity>,
+    allJobs: List<JobEntity>,
     searchQuery: String,
     statusFilter: JobStatus?,
     isScraping: Boolean,
@@ -45,6 +46,7 @@ fun AppNavigation(
         composable(Screen.JobList.route) {
             JobListScreen(
                 jobs = jobs,
+                allJobs = allJobs,
                 searchQuery = searchQuery,
                 statusFilter = statusFilter,
                 isScraping = isScraping,
@@ -72,7 +74,7 @@ fun AppNavigation(
             )
         ) { backStackEntry ->
             val jobId = backStackEntry.arguments?.getLong("jobId") ?: return@composable
-            val job = jobs.firstOrNull { it.id == jobId }
+            val job = allJobs.firstOrNull { it.id == jobId }
 
             if (job == null) {
                 JobDetailsMissingScreen(
@@ -102,26 +104,28 @@ fun AppNavigation(
 @Composable
 fun AppNavigationPreview() {
     LinkedIn_Job_TrackerTheme {
+        val sampleJobs = listOf(
+            JobEntity(
+                id = 1,
+                companyName = "Google",
+                jobUrl = "https://careers.google.com",
+                jobDescription = "Software Engineer",
+                status = JobStatus.APPLIED,
+                timestamp = System.currentTimeMillis()
+            ),
+            JobEntity(
+                id = 2,
+                companyName = "Meta",
+                jobUrl = "https://www.metacareers.com/",
+                jobDescription = "Product Manager",
+                status = JobStatus.SAVED,
+                timestamp = System.currentTimeMillis()
+            )
+        )
         AppNavigation(
             navController = rememberNavController(),
-            jobs = listOf(
-                JobEntity(
-                    id = 1,
-                    companyName = "Google",
-                    jobUrl = "https://careers.google.com",
-                    jobDescription = "Software Engineer",
-                    status = JobStatus.APPLIED,
-                    timestamp = System.currentTimeMillis()
-                ),
-                JobEntity(
-                    id = 2,
-                    companyName = "Meta",
-                    jobUrl = "https://www.metacareers.com/",
-                    jobDescription = "Product Manager",
-                    status = JobStatus.SAVED,
-                    timestamp = System.currentTimeMillis()
-                )
-            ),
+            jobs = sampleJobs,
+            allJobs = sampleJobs,
             searchQuery = "",
             statusFilter = null,
             isScraping = false,

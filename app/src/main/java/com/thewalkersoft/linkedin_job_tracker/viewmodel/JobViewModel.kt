@@ -39,10 +39,18 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
     private val _message = MutableStateFlow<String?>(null)
     val message: StateFlow<String?> = _message.asStateFlow()
 
+    // All jobs without any filter (for calculating counts)
+    val allJobs: StateFlow<List<JobEntity>> = dao.getAllJobs()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
     val jobs: StateFlow<List<JobEntity>> = combine(
         _searchQuery,
         _statusFilter,
-        dao.getAllJobs()
+        allJobs
     ) { query, selectedStatus, allJobs ->
         allJobs.filter { job ->
             val matchesQuery = query.isBlank() || job.companyName.contains(query, ignoreCase = true)

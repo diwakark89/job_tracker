@@ -36,6 +36,7 @@ class MainActivity : ComponentActivity() {
             LinkedIn_Job_TrackerTheme {
                 val navController = rememberNavController()
                 val jobs by viewModel.jobs.collectAsState()
+                val allJobs by viewModel.allJobs.collectAsState()
                 val searchQuery by viewModel.searchQuery.collectAsState()
                 val statusFilter by viewModel.statusFilter.collectAsState()
                 val isScraping by viewModel.isScraping.collectAsState()
@@ -45,6 +46,7 @@ class MainActivity : ComponentActivity() {
                 AppNavigation(
                     navController = navController,
                     jobs = jobs,
+                    allJobs = allJobs,
                     searchQuery = searchQuery,
                     statusFilter = statusFilter,
                     isScraping = isScraping,
@@ -132,6 +134,7 @@ private fun JobListScreenPreview() {
 
         JobListScreen(
             jobs = sampleJobs,
+            allJobs = sampleJobs,
             searchQuery = "",
             statusFilter = null,
             isScraping = false,
