@@ -57,9 +57,12 @@ function doPost(e) {
       sheet.getRange(row, 5).setValue(data.jobDescription);
       sheet.getRange(row, 6).setValue(data.status);
       sheet.getRange(row, 7).setValue(new Date());
-      sheet.getRange(row, 8).setValue(data.lastModified || new Date().getTime());
+      // Set lastModified as a date object for proper formatting
+      const lastModifiedDate = new Date(data.lastModified || new Date().getTime());
+      sheet.getRange(row, 8).setValue(lastModifiedDate);
     } else {
       // Append new row
+      const lastModifiedDate = new Date(data.lastModified || new Date().getTime());
       sheet.appendRow([
         data.id,
         data.jobUrl,
@@ -68,7 +71,7 @@ function doPost(e) {
         data.jobDescription,
         data.status,
         new Date(),
-        data.lastModified || new Date().getTime()
+        lastModifiedDate
       ]);
     }
 
@@ -109,7 +112,9 @@ function handleUpdateJob(sheet, data) {
     sheet.getRange(row, 5).setValue(data.jobDescription);
     sheet.getRange(row, 6).setValue(data.status);
     sheet.getRange(row, 7).setValue(new Date());
-    sheet.getRange(row, 8).setValue(data.lastModified || new Date().getTime());
+    // Set lastModified as a date object for proper formatting
+    const lastModifiedDate = new Date(data.lastModified || new Date().getTime());
+    sheet.getRange(row, 8).setValue(lastModifiedDate);
 
     return ContentService.createTextOutput(JSON.stringify({"result":"success", "message": "Job updated successfully"}))
       .setMimeType(ContentService.MimeType.JSON);

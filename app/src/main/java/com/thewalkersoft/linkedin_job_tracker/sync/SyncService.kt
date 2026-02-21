@@ -9,11 +9,13 @@ import com.thewalkersoft.linkedin_job_tracker.data.JobEntity
  * Service to handle bi-directional synchronization between local database and Google Sheets.
  *
  * Sync Rules:
- * 1. Use ID + URL combination for uniqueness
- * 2. If both have same status → App data takes precedence
- * 3. If different status → Most recent modification wins (lastModified timestamp)
- * 4. Missing in app → Add from sheet
- * 5. Missing in sheet → Upload to sheet
+ * 1. Use Job URL as the unique identifier for matching
+ * 2. Jobs only in app → Upload to sheet
+ * 3. Jobs only in sheet → Download to app
+ * 4. Jobs in both places → Resolve conflict using lastModified timestamp:
+ *    - The version with the most recent lastModified timestamp always wins
+ *    - If timestamps are equal, app data takes precedence
+ * 5. Identical data → No action needed
  */
 class SyncService(private val dao: JobDao) {
 
@@ -114,33 +116,36 @@ class SyncService(private val dao: JobDao) {
 
     /**
      * Resolve conflicts between local and sheet data
+     * RULE: The most recently modified version (based on lastModified timestamp) always wins
      */
     private fun resolveConflict(localJob: JobEntity, sheetJob: JobEntity): ConflictResolution {
-        // Check if data is identical
+        // Check if all data is identical
         if (localJob.companyName == sheetJob.companyName &&
+            localJob.jobTitle == sheetJob.jobTitle &&
             localJob.jobDescription == sheetJob.jobDescription &&
             localJob.status == sheetJob.status) {
             return ConflictResolution.NO_CHANGE
         }
 
-        // If status is the same, app takes precedence (update sheet)
-        if (localJob.status == sheetJob.status) {
-            return ConflictResolution.UPDATE_BOTH // App precedence
-        }
-
-        // If status is different, use timestamp to determine which is newer
-        // Note: Sheet jobs may not have lastModified, so we use a fallback
+        // Use lastModified timestamp to determine which version is newer
         val localModified = localJob.lastModified
         val sheetModified = sheetJob.lastModified
 
+        Log.d("SyncService", "Conflict detected for ${localJob.companyName}:")
+        Log.d("SyncService", "  Local lastModified: $localModified")
+        Log.d("SyncService", "  Sheet lastModified: $sheetModified")
+
         return if (localModified > sheetModified) {
-            // Local is newer → Update sheet
+            // Local is newer → Update sheet with local data
+            Log.d("SyncService", "  Resolution: Local is newer, updating sheet")
             ConflictResolution.UPDATE_SHEET
         } else if (sheetModified > localModified) {
-            // Sheet is newer → Update local
+            // Sheet is newer → Update local with sheet data
+            Log.d("SyncService", "  Resolution: Sheet is newer, updating local")
             ConflictResolution.UPDATE_LOCAL
         } else {
-            // Timestamps are equal, app takes precedence
+            // Timestamps are equal but data differs → App takes precedence
+            Log.d("SyncService", "  Resolution: Timestamps equal, app takes precedence")
             ConflictResolution.UPDATE_BOTH
         }
     }
