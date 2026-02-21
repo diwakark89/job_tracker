@@ -258,7 +258,8 @@ fun JobListScreen(
                                     val result = snackbarHostState.showSnackbar(
                                         message = "Job deleted",
                                         actionLabel = "Undo",
-                                        withDismissAction = true
+                                        withDismissAction = true,
+                                        duration = SnackbarDuration.Short
                                     )
                                     if (result == SnackbarResult.ActionPerformed) {
                                         onRestoreJob(job)
