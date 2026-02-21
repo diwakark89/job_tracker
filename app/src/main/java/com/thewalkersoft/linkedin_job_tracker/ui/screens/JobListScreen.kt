@@ -9,6 +9,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.Delete
@@ -56,6 +57,8 @@ fun JobListScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     val statusOptions = remember { listOf<JobStatus?>(null) + JobStatus.entries }
+    val listState = rememberLazyListState()
+    val previousJobCount = remember { mutableStateOf(jobs.size) }
 
     // Calculate counts for each status
     val statusCounts = remember(allJobs) {
@@ -67,6 +70,13 @@ fun JobListScreen(
     }
     val totalCount = allJobs.size
 
+    // Scroll to top when a new job is added
+    LaunchedEffect(jobs.size) {
+        if (jobs.size > previousJobCount.value && jobs.isNotEmpty()) {
+            listState.animateScrollToItem(0)
+        }
+        previousJobCount.value = jobs.size
+    }
 
     // Show message when it's available
     LaunchedEffect(message) {
@@ -228,6 +238,7 @@ fun JobListScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(paddingValues),
+                    state = listState,
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {

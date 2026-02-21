@@ -75,32 +75,33 @@ object JobScraper {
         }
     }
 
+    internal fun normalizeLineBreaks(text: String): String {
+        return text
+            .replace(Regex("\r\n?"), "\n")
+            .replace(Regex("\n[ \t]+\n"), "\n\n")
+            .replace(Regex("\n{3,}"), "\n\n")
+    }
+
+    internal fun extractTextFromHtmlWithLineBreaks(htmlContent: String): String {
+        return htmlContent
+            .replace(Regex("<br\\s*/?>"), "\n")
+            .replace(Regex("</p>"), "\n")
+            .replace(Regex("</div>"), "\n")
+            .replace(Regex("</li>"), "\n")
+            .replace(Regex("<li[^>]*>"), "• ")
+            .replace(Regex("<[^>]+>"), "")
+            .let { org.jsoup.parser.Parser.unescapeEntities(it, false) }
+            .lines()
+            .joinToString("\n") { it.trim() }
+            .let { normalizeLineBreaks(it) }
+            .trim()
+    }
+
     private fun extractTextWithLineBreaks(element: org.jsoup.select.Elements): String {
         if (element.isEmpty()) return ""
 
-        // Convert HTML to text while preserving line breaks
         val htmlContent = element.first()?.html() ?: return ""
 
-        return htmlContent
-            // Replace <br> tags with newlines
-            .replace(Regex("<br\\s*/?>"), "\n")
-            // Replace closing paragraph and div tags with double newlines
-            .replace(Regex("</p>"), "\n\n")
-            .replace(Regex("</div>"), "\n")
-            .replace(Regex("</li>"), "\n")
-            // Replace list items with bullet points
-            .replace(Regex("<li[^>]*>"), "• ")
-            // Remove all other HTML tags
-            .replace(Regex("<[^>]+>"), "")
-            // Decode HTML entities
-            .let { org.jsoup.parser.Parser.unescapeEntities(it, false) }
-            // Clean up multiple newlines (more than 2 consecutive)
-            .replace(Regex("\n{3,}"), "\n\n")
-            // Trim each line
-            .lines()
-            .joinToString("\n") { it.trim() }
-            // Remove leading/trailing whitespace
-            .trim()
+        return extractTextFromHtmlWithLineBreaks(htmlContent)
     }
 }
-
