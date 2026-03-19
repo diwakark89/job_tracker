@@ -12,6 +12,7 @@ import com.thewalkersoft.linkedin_job_tracker.data.JobStatus
 import com.thewalkersoft.linkedin_job_tracker.data.parseJobStatus
 import com.thewalkersoft.linkedin_job_tracker.scraper.JobScraper
 import com.thewalkersoft.linkedin_job_tracker.sync.SyncService
+import com.thewalkersoft.linkedin_job_tracker.util.PreferencesManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -26,6 +27,7 @@ import java.util.Locale
 class JobViewModel(application: Application) : AndroidViewModel(application) {
     private val dao = JobDatabase.getDatabase(application).jobDao()
     private val syncService = SyncService(dao)
+    private val preferencesManager = PreferencesManager(application)
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
@@ -52,8 +54,10 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
         _statusFilter,
         allJobs
     ) { query, selectedStatus, allJobs ->
+        val normalizedQuery = query.trim()
         allJobs.filter { job ->
-            val matchesQuery = query.isBlank() || job.companyName.contains(query, ignoreCase = true)
+            val matchesQuery = normalizedQuery.isBlank() ||
+                job.companyName.contains(normalizedQuery, ignoreCase = true)
             val matchesStatus = selectedStatus == null || job.status == selectedStatus
             matchesQuery && matchesStatus
         }
@@ -164,14 +168,30 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    private val _lastSyncTime = MutableStateFlow("Never")
+    private val _lastSyncTime = MutableStateFlow(getInitialLastSyncTime())
     val lastSyncTime: StateFlow<String> = _lastSyncTime.asStateFlow()
 
-    private fun updateSyncTimestamp() {
+    private fun getInitialLastSyncTime(): String {
+        val timestamp = preferencesManager.getLastSyncTimeMillis()
+        return if (timestamp != null) {
+            formatSyncTime(timestamp)
+        } else {
+            preferencesManager.getLastSyncTime()
+        }
+    }
+
+    private fun formatSyncTime(timestampMillis: Long): String {
         val formatter = SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault())
-        _lastSyncTime.value = formatter.format(Date())
-        // Optional: Save this value to SharedPreferences or DataStore
-        // so it persists when the app restarts
+        return formatter.format(Date(timestampMillis))
+    }
+
+    private fun updateSyncTimestamp() {
+        val now = System.currentTimeMillis()
+        val formattedTime = formatSyncTime(now)
+        _lastSyncTime.value = formattedTime
+        // Save both readable and epoch values for robust restore across restarts.
+        preferencesManager.saveLastSyncTime(formattedTime)
+        preferencesManager.saveLastSyncTimeMillis(now)
     }
 
     private fun parseAndScrapeLinkedInJob(text: String) {

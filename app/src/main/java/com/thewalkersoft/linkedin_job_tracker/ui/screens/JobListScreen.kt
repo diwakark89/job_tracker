@@ -45,10 +45,10 @@ fun JobListScreen(
     onStatusChange: (JobEntity, JobStatus) -> Unit,
     onDeleteJob: (Long) -> Unit,
     onEditJob: (JobEntity, String, String, String, String) -> Unit,
+    modifier: Modifier = Modifier,
     onRestoreJob: (JobEntity) -> Unit = {},
     onMessageShown: () -> Unit = {},
-    onJobClick: (Long) -> Unit = {},
-    modifier: Modifier = Modifier
+    onJobClick: (Long) -> Unit = {}
 ) {
     var isSearchActive by remember { mutableStateOf(false) }
     var isStatusMenuOpen by remember { mutableStateOf(false) }
@@ -313,8 +313,8 @@ fun SwipeToDismissBox(
     job: JobEntity,
     onRequestDelete: () -> Unit,
     onStatusChange: (JobStatus) -> Unit,
+    modifier: Modifier = Modifier,
     onJobClick: () -> Unit = {},
-    modifier: Modifier = Modifier
 ) {
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { dismissValue ->
