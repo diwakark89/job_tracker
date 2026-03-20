@@ -202,6 +202,29 @@ Normalization helpers:
 - Cloud is synchronized and may update local data during sync.
 - Preferences are used only for lightweight metadata, not domain records.
 
+### 6.4 Room Schema (Current v3)
+
+Schema source of truth:
+- `app/schemas/com.thewalkersoft.linkedin_job_tracker.data.JobDatabase/3.json`
+- `JobDatabase` uses `exportSchema = true` and explicit migrations (`1->2`, `2->3`).
+
+Current table:
+- `jobs`
+  - Primary key: `id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL`.
+  - Columns:
+    - `companyName TEXT NOT NULL`
+    - `jobUrl TEXT NOT NULL`
+    - `jobDescription TEXT NOT NULL`
+    - `jobTitle TEXT NOT NULL`
+    - `status TEXT NOT NULL` (stored as enum name via `Converters.fromJobStatus`).
+    - `timestamp INTEGER NOT NULL`
+    - `lastModified INTEGER NOT NULL`
+
+Schema semantics:
+- `jobUrl` is the business identity used for sync matching across local and sheet records.
+- `lastModified` is the conflict-resolution field used by sync (newer wins; local precedence on ties).
+- All columns are non-null in v3; default handling for legacy rows is applied during migrations.
+
 ## 7) Cross-Cutting Concerns
 
 ### 7.1 Authentication and Authorization

@@ -8,6 +8,7 @@ A modern Android app built with Jetpack Compose, Room Database, and JSoup for tr
 - **Share Intent Integration**: Share LinkedIn job postings directly from LinkedIn app
 - **Web Scraping**: Automatically scrapes job descriptions using JSoup
 - **Local Storage**: Persists jobs using Room Database
+- **Google Sheets Sync**: Bi-directional sync with conflict resolution (`lastModified` wins)
 - **Search**: Filter jobs by company name
 - **Status Management**: Track application progress with color-coded chips
 - **Swipe to Delete**: Easy job removal with swipe gesture
@@ -16,10 +17,10 @@ A modern Android app built with Jetpack Compose, Room Database, and JSoup for tr
 - **Material 3 Design**: Modern UI with Material Design 3 components
 - **Expandable Cards**: Tap to expand/collapse job details
 - **SearchBar**: Quick search functionality in the top app bar
-- **Loading Overlay**: Visual feedback during web scraping
+- **Loading Overlay**: Visual feedback during web scraping and sync
 - **Color-Coded Status**:
   - 🟢 Green: Offer
-  - 🔴 Red: Rejected
+  - 🔴 Red: Resume Rejected / Interview Rejected
   - 🟡 Yellow: Interviewing
   - 🔵 Blue: Applied
   - ⚪ Gray: Saved
@@ -34,25 +35,39 @@ A modern Android app built with Jetpack Compose, Room Database, and JSoup for tr
 ### Project Structure
 ```
 app/src/main/java/com/thewalkersoft/linkedin_job_tracker/
+├── MainActivity.kt           # Entry point; handles Share Intent; hoists state
 ├── data/
-│   ├── JobEntity.kt          # Room entity with job data
-│   ├── JobDao.kt             # Database access object
-│   └── JobDatabase.kt        # Room database with TypeConverters
+│   ├── JobEntity.kt          # @Entity, JobStatus enum, displayName(), parseJobStatus()
+│   ├── JobDao.kt             # @Dao: getAllJobs, getAllJobsOnce, upsertJob, deleteJob, getJobByUrl, getMaxId
+│   └── JobDatabase.kt        # Room DB (version 3), explicit migrations v1→v2→v3
 ├── scraper/
 │   └── JobScraper.kt         # JSoup web scraping logic
+├── sync/
+│   └── SyncService.kt        # Bidirectional Google Sheets sync; conflict resolution by lastModified
+├── client/
+│   └── RetrofitClient.kt     # Retrofit singleton; DEPLOYMENT_ID constant for Apps Script URL
+├── service/
+│   ├── GoogleSheetApiService.kt
+│   └── GoogleSheetResponse.kt
+├── navigation/
+│   ├── Screen.kt
+│   └── AppNavigation.kt
 ├── viewmodel/
 │   └── JobViewModel.kt       # ViewModel with StateFlows
 ├── ui/
 │   ├── components/
 │   │   ├── JobCard.kt        # Expandable job card
-│   │   └── LoadingOverlay.kt # Scraping indicator
+│   │   ├── EditJobDialog.kt
+│   │   └── LoadingOverlay.kt # Scraping + sync indicator
 │   ├── screens/
-│   │   └── JobListScreen.kt  # Main screen with search & list
+│   │   ├── JobListScreen.kt
+│   │   └── JobDetailsScreen.kt
 │   └── theme/
 │       ├── Color.kt
 │       ├── Theme.kt
 │       └── Type.kt
-└── MainActivity.kt           # Entry point
+└── util/
+    └── PreferencesManager.kt # Last-sync timestamp persistence
 ```
 
 ## Data Model
@@ -66,8 +81,10 @@ data class JobEntity(
     val companyName: String,
     val jobUrl: String,
     val jobDescription: String,
+    val jobTitle: String = "",
     val status: JobStatus = JobStatus.SAVED,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
+    val lastModified: Long = System.currentTimeMillis()
 )
 ```
 
@@ -76,15 +93,20 @@ data class JobEntity(
 - APPLIED
 - INTERVIEWING
 - OFFER
-- REJECTED
+- RESUME_REJECTED
+- INTERVIEW_REJECTED
 
 ## Database Operations
 
 ### JobDao
 - `getAllJobs()`: Flow<List<JobEntity>>
-- `searchJobsByCompany(query: String)`: Flow<List<JobEntity>>
+- `getAllJobsOnce()`: List<JobEntity>
 - `upsertJob(job: JobEntity)`: Insert or update
 - `deleteJob(jobId: Long)`: Remove job
+- `getJobByUrl(url: String)`: Find by business key
+- `getMaxId()`: Max ID across local records
+
+Every local mutation also syncs via Retrofit; deletions call `deleteJob(@Body job: JobEntity)` on the Google Sheets API.
 
 ## Web Scraping
 
@@ -101,14 +123,18 @@ The `JobScraper` uses JSoup with:
 ## State Management
 
 ### ViewModel StateFlows
-- `jobs`: StateFlow<List<JobEntity>>
+- `allJobs`: StateFlow<List<JobEntity>>
+- `jobs`: StateFlow<List<JobEntity>> (derived from `combine(searchQuery, statusFilter, allJobs)`)
 - `searchQuery`: StateFlow<String>
+- `statusFilter`: StateFlow<JobStatus?>
 - `isScraping`: StateFlow<Boolean>
+- `message`: StateFlow<String?>
+- `lastSyncTime`: StateFlow<String>
 
 ### Intent Handling
 Parses shared text from LinkedIn:
-- Extracts company name from text patterns
-- Extracts URL using regex
+- Accepts `Intent.ACTION_SEND` with `text/plain`
+- Extracts the first URL using regex
 - Automatically scrapes and saves job
 
 ## How to Use

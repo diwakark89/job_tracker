@@ -19,7 +19,7 @@ app/src/main/java/com/thewalkersoft/linkedin_job_tracker/
 ├── MainActivity.kt                  # Entry point; handles Share Intent; hoists state
 ├── data/
 │   ├── JobEntity.kt                 # @Entity, JobStatus enum, displayName(), parseJobStatus()
-│   ├── JobDao.kt                    # @Dao: getAllJobs, upsertJob, deleteJob, getJobByUrl, getMaxId
+│   ├── JobDao.kt                    # @Dao: getAllJobs, getAllJobsOnce, upsertJob, deleteJob, getJobByUrl, getMaxId
 │   └── JobDatabase.kt              # Room DB (version 3), explicit migrations v1→v2→v3
 ├── viewmodel/
 │   └── JobViewModel.kt             # StateFlows: allJobs, jobs, searchQuery, statusFilter, _isScraping, _message
@@ -34,7 +34,7 @@ app/src/main/java/com/thewalkersoft/linkedin_job_tracker/
 │   └── GoogleSheetResponse.kt      # Response DTO
 ├── navigation/
 │   ├── Screen.kt                   # Route definitions (JobList, JobDetails/{jobId})
-│   └── AppNavigation.kt            # NavHost; resolves jobId from allJobs (no Parcelable)
+│   └── AppNavigation.kt            # NavHost; resolves jobId from allJobs (no Parcelable), shows missing-state screen when stale id is opened
 ├── ui/
 │   ├── screens/
 │   │   ├── JobListScreen.kt        # Search bar, status filter chips, swipe-to-delete, sync button
@@ -106,7 +106,7 @@ When adding new functionality, add corresponding unit tests in `src/test/`. Scra
 ## Code Style and Conventions
 
 ### Kotlin / Compose
-- All Compose screens are **stateless**; state is hoisted to `MainActivity` via `collectAsStateWithLifecycle`.
+- All Compose screens are **stateless**; state is hoisted to `MainActivity` (currently `collectAsState` for most flows, `collectAsStateWithLifecycle` for `lastSyncTime`).
 - Use `@OptIn(ExperimentalMaterial3Api::class)` on composables that use `SearchBar` or `SwipeToDismissBox`.
 - No raw `enum.name` for user-facing strings — always call `JobStatus.displayName()`.
 - Prefer `combine(flow1, flow2, flow3) { ... }` for derived state rather than intermediate `MutableStateFlow` mutations.
@@ -135,7 +135,7 @@ When adding new functionality, add corresponding unit tests in `src/test/`. Scra
 Every local mutation (add, update status, edit, delete) must **also** call the corresponding Retrofit method from `JobViewModel`:
 - `uploadJob(job)` — new job
 - `updateJob(job)` — status or field change
-- `deleteJob(jobId, jobUrl)` — deletion
+- `deleteJob(job)` — deletion (current API posts the full `JobEntity`)
 
 ---
 
@@ -162,7 +162,7 @@ Every local mutation (add, update status, edit, delete) must **also** call the c
 ## Navigation
 
 - Routes are defined in `Screen.kt` as sealed class entries.
-- `JobDetailsScreen` receives a `jobId: Long` argument from the route, then resolves the full `JobEntity` from `allJobs` (not from a Parcelable). If no match is found, it pops back.
+- `JobDetailsScreen` receives a `jobId: Long` argument from the route, then resolves the full `JobEntity` from `allJobs` (not from a Parcelable). If no match is found, `JobDetailsMissingScreen` is shown with a back action.
 - Do not pass `JobEntity` objects as navigation arguments — this is intentional to avoid serialisation issues.
 
 ---
@@ -171,7 +171,7 @@ Every local mutation (add, update status, edit, delete) must **also** call the c
 
 | Symptom | Where to look |
 |---------|---------------|
-| Details screen shows blank / navigates back immediately | `Screen.kt` route format, `AppNavigation.kt` job lookup from `allJobs` |
+| Details screen shows "Job no longer available." | `Screen.kt` route format, `AppNavigation.kt` job lookup from `allJobs`, and `JobDetailsMissingScreen` in `JobDetailsScreen.kt` |
 | Sync appears stale or doesn't reflect changes | `lastModified` updates in `JobViewModel`, sheet-side `handleUpdateJob` / `handleDeleteJob` in the Apps Script |
 | Scraping returns empty strings | CSS selectors in `JobScraper.scrapeJobInfo()` — LinkedIn may have changed markup |
 | Retrofit calls fail silently | OkHttp logging interceptor (tag `HTTP`); check `DEPLOYMENT_ID` in `RetrofitClient.kt` |
