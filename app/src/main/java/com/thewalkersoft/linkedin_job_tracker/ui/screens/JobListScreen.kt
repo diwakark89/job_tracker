@@ -1,17 +1,11 @@
 package com.thewalkersoft.linkedin_job_tracker.ui.screens
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CloudSync
+import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
@@ -19,8 +13,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
+import com.thewalkersoft.linkedin_job_tracker.BuildConfig
 import com.thewalkersoft.linkedin_job_tracker.data.JobEntity
 import com.thewalkersoft.linkedin_job_tracker.data.JobStatus
 import com.thewalkersoft.linkedin_job_tracker.data.displayName
@@ -38,17 +32,23 @@ fun JobListScreen(
     statusFilter: JobStatus?,
     isScraping: Boolean,
     message: String?,
-    lastSyncTime: String,
-    onSyncFromCloud: () -> Unit,
+    cloudHealth: String,
     onSearchQueryChange: (String) -> Unit,
     onStatusFilterChange: (JobStatus?) -> Unit,
     onStatusChange: (JobEntity, JobStatus) -> Unit,
-    onDeleteJob: (Long) -> Unit,
+    onDeleteJob: (String) -> Unit,
     onEditJob: (JobEntity, String, String, String, String) -> Unit,
     modifier: Modifier = Modifier,
     onRestoreJob: (JobEntity) -> Unit = {},
     onMessageShown: () -> Unit = {},
-    onJobClick: (Long) -> Unit = {}
+    onJobClick: (String) -> Unit = {},
+    // Diagnostics – debug-only; default no-ops keep previews unchanged
+    diagnosticsStep: Int = 0,
+    onRequestDiagnosticsReset: () -> Unit = {},
+    onConfirmDiagnosticsStep1: () -> Unit = {},
+    onConfirmCancelWorker: () -> Unit = {},
+    onDeclineCancelWorker: () -> Unit = {},
+    onDismissDiagnostics: () -> Unit = {}
 ) {
     var isSearchActive by remember { mutableStateOf(false) }
     var isStatusMenuOpen by remember { mutableStateOf(false) }
@@ -87,22 +87,6 @@ fun JobListScreen(
             )
             onMessageShown()
         }
-    }
-
-    val syncRotation = if (isScraping) {
-        val transition = rememberInfiniteTransition(label = "syncRotation")
-        val angle by transition.animateFloat(
-            initialValue = 0f,
-            targetValue = 360f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(durationMillis = 800, easing = LinearEasing),
-                repeatMode = RepeatMode.Restart
-            ),
-            label = "syncRotationAngle"
-        )
-        angle
-    } else {
-        0f
     }
 
     Box(modifier = modifier.fillMaxSize()) {
@@ -193,19 +177,19 @@ fun JobListScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = "Last Synced: $lastSyncTime",
+                            text = cloudHealth,
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        IconButton(
-                            onClick = onSyncFromCloud,
-                            enabled = !isScraping
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.CloudSync,
-                                contentDescription = "Sync",
-                                modifier = Modifier.graphicsLayer { rotationZ = syncRotation }
-                            )
+                        // Debug-only diagnostics reset trigger
+                        if (BuildConfig.DEBUG) {
+                            IconButton(onClick = onRequestDiagnosticsReset) {
+                                Icon(
+                                    imageVector = Icons.Default.BugReport,
+                                    contentDescription = "Diagnostics Reset [DEBUG]",
+                                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
+                                )
+                            }
                         }
                     }
                 }
@@ -304,6 +288,17 @@ fun JobListScreen(
         }
 
         LoadingOverlay(isLoading = isScraping)
+
+        // Diagnostics reset (debug-only; shown only when BuildConfig.DEBUG and step > 0)
+        if (BuildConfig.DEBUG && diagnosticsStep > 0) {
+            DiagnosticsResetDialog(
+                step = diagnosticsStep,
+                onConfirmStep1 = onConfirmDiagnosticsStep1,
+                onConfirmCancelWorker = onConfirmCancelWorker,
+                onDeclineCancelWorker = onDeclineCancelWorker,
+                onDismiss = onDismissDiagnostics
+            )
+        }
     }
 }
 

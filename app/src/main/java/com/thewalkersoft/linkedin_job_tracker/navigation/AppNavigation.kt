@@ -25,17 +25,23 @@ fun AppNavigation(
     statusFilter: JobStatus?,
     isScraping: Boolean,
     message: String?,
-    lastSyncTime: String,
-    onSyncFromCloud: () -> Unit,
+    cloudHealth: String,
     onSearchQueryChange: (String) -> Unit,
     onStatusFilterChange: (JobStatus?) -> Unit,
     onStatusChange: (JobEntity, JobStatus) -> Unit,
-    onDeleteJob: (Long) -> Unit,
+    onDeleteJob: (String) -> Unit,
     onOpenUrl: (String) -> Unit,
     onEditJob: (JobEntity, String, String, String, String) -> Unit,
     onRestoreJob: (JobEntity) -> Unit,
     onMessageShown: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    // Diagnostics – debug-only; default no-ops keep non-debug callers unchanged
+    diagnosticsStep: Int = 0,
+    onRequestDiagnosticsReset: () -> Unit = {},
+    onConfirmDiagnosticsStep1: () -> Unit = {},
+    onConfirmCancelWorker: () -> Unit = {},
+    onDeclineCancelWorker: () -> Unit = {},
+    onDismissDiagnostics: () -> Unit = {}
 ) {
     NavHost(
         navController = navController,
@@ -51,8 +57,7 @@ fun AppNavigation(
                 statusFilter = statusFilter,
                 isScraping = isScraping,
                 message = message,
-                lastSyncTime = lastSyncTime,
-                onSyncFromCloud = onSyncFromCloud,
+                cloudHealth = cloudHealth,
                 onSearchQueryChange = onSearchQueryChange,
                 onStatusFilterChange = onStatusFilterChange,
                 onStatusChange = onStatusChange,
@@ -60,6 +65,12 @@ fun AppNavigation(
                 onEditJob = onEditJob,
                 onRestoreJob = onRestoreJob,
                 onMessageShown = onMessageShown,
+                diagnosticsStep = diagnosticsStep,
+                onRequestDiagnosticsReset = onRequestDiagnosticsReset,
+                onConfirmDiagnosticsStep1 = onConfirmDiagnosticsStep1,
+                onConfirmCancelWorker = onConfirmCancelWorker,
+                onDeclineCancelWorker = onDeclineCancelWorker,
+                onDismissDiagnostics = onDismissDiagnostics,
                 onJobClick = { jobId ->
                     navController.navigate(Screen.JobDetails.createRoute(jobId))
                 }
@@ -70,10 +81,10 @@ fun AppNavigation(
         composable(
             route = Screen.JobDetails.route,
             arguments = listOf(
-                navArgument("jobId") { type = NavType.LongType }
+                navArgument("jobId") { type = NavType.StringType }
             )
         ) { backStackEntry ->
-            val jobId = backStackEntry.arguments?.getLong("jobId") ?: return@composable
+            val jobId = backStackEntry.arguments?.getString("jobId") ?: return@composable
             val job = allJobs.firstOrNull { it.id == jobId }
 
             if (job == null) {
@@ -106,7 +117,7 @@ fun AppNavigationPreview() {
     LinkedIn_Job_TrackerTheme {
         val sampleJobs = listOf(
             JobEntity(
-                id = 1,
+                id = "sample-1",
                 companyName = "Google",
                 jobUrl = "https://careers.google.com",
                 jobDescription = "Software Engineer",
@@ -114,7 +125,7 @@ fun AppNavigationPreview() {
                 timestamp = System.currentTimeMillis()
             ),
             JobEntity(
-                id = 2,
+                id = "sample-2",
                 companyName = "Meta",
                 jobUrl = "https://www.metacareers.com/",
                 jobDescription = "Product Manager",
@@ -130,8 +141,7 @@ fun AppNavigationPreview() {
             statusFilter = null,
             isScraping = false,
             message = null,
-            lastSyncTime = "Never",
-            onSyncFromCloud = {},
+            cloudHealth = "Offline",
             onSearchQueryChange = { _ -> },
             onStatusFilterChange = { _ -> },
             onStatusChange = { _, _ -> },

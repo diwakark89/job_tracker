@@ -20,11 +20,8 @@ interface JobDao {
     suspend fun upsertJob(job: JobEntity)
 
     @Query("DELETE FROM jobs WHERE id = :jobId")
-    suspend fun deleteJob(jobId: Long)
+    suspend fun deleteJob(jobId: String)
 
     @Query("SELECT * FROM jobs WHERE jobUrl = :url LIMIT 1")
     suspend fun getJobByUrl(url: String): JobEntity?
-
-    @Query("SELECT MAX(id) FROM jobs")
-    suspend fun getMaxId(): Long?
 }

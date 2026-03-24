@@ -127,10 +127,9 @@ fun StatusChip(
     modifier: Modifier = Modifier
 ) {
     val containerColor = when (status) {
-        JobStatus.OFFER -> com.thewalkersoft.linkedin_job_tracker.ui.theme.JobOfferGreen.copy(alpha = 0.35f)
         JobStatus.RESUME_REJECTED -> com.thewalkersoft.linkedin_job_tracker.ui.theme.JobResumeRejectedRed.copy(alpha = 0.35f)
         JobStatus.INTERVIEW_REJECTED -> com.thewalkersoft.linkedin_job_tracker.ui.theme.JobInterviewRejectedRed.copy(alpha = 0.35f)
-        JobStatus.INTERVIEWING -> com.thewalkersoft.linkedin_job_tracker.ui.theme.JobInterviewingYellow.copy(alpha = 0.35f)
+        JobStatus.INTERVIEW -> com.thewalkersoft.linkedin_job_tracker.ui.theme.JobInterviewingYellow.copy(alpha = 0.35f)
         JobStatus.APPLIED -> com.thewalkersoft.linkedin_job_tracker.ui.theme.JobAppliedBlue.copy(alpha = 0.35f)
         JobStatus.SAVED -> com.thewalkersoft.linkedin_job_tracker.ui.theme.JobSavedGray.copy(alpha = 0.35f)
     }

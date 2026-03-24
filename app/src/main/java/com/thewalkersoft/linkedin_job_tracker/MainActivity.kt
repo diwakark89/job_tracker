@@ -41,7 +41,8 @@ class MainActivity : ComponentActivity() {
                 val statusFilter by viewModel.statusFilter.collectAsState()
                 val isScraping by viewModel.isScraping.collectAsState()
                 val message by viewModel.message.collectAsState()
-                val lastSyncTime by viewModel.lastSyncTime.collectAsStateWithLifecycle()
+                val cloudHealth by viewModel.cloudHealth.collectAsStateWithLifecycle()
+                val diagnosticsStep by viewModel.diagnosticsStep.collectAsState()
 
                 AppNavigation(
                     navController = navController,
@@ -51,8 +52,7 @@ class MainActivity : ComponentActivity() {
                     statusFilter = statusFilter,
                     isScraping = isScraping,
                     message = message,
-                    lastSyncTime = lastSyncTime,
-                    onSyncFromCloud = viewModel::syncFromSheet,
+                    cloudHealth = cloudHealth,
                     onSearchQueryChange = viewModel::onSearchQueryChange,
                     onStatusFilterChange = viewModel::onStatusFilterChange,
                     onStatusChange = { job, status -> viewModel.updateJobStatus(job, status) },
@@ -63,6 +63,12 @@ class MainActivity : ComponentActivity() {
                     },
                     onRestoreJob = viewModel::restoreJob,
                     onMessageShown = viewModel::clearMessage,
+                    diagnosticsStep = diagnosticsStep,
+                    onRequestDiagnosticsReset = viewModel::requestDiagnosticsReset,
+                    onConfirmDiagnosticsStep1 = viewModel::confirmResetQueue,
+                    onConfirmCancelWorker = viewModel::confirmCancelWorker,
+                    onDeclineCancelWorker = viewModel::declineCancelWorker,
+                    onDismissDiagnostics = viewModel::dismissDiagnosticsReset,
                     modifier = Modifier.fillMaxSize()
                 )
             }
@@ -86,16 +92,16 @@ private fun JobListScreenPreview() {
     LinkedIn_Job_TrackerTheme {
         val sampleJobs = listOf(
             JobEntity(
-                id = 1,
+                id = "preview-1",
                 companyName = "Contoso",
                 jobUrl = "https://www.linkedin.com/jobs/view/123456",
                 jobDescription = "Sample job description for preview.",
                 jobTitle = "Senior Software Engineer",
-                status = JobStatus.INTERVIEWING,
+                status = JobStatus.INTERVIEW,
                 timestamp = System.currentTimeMillis()
             ),
             JobEntity(
-                id = 2,
+                id = "preview-2",
                 companyName = "Fabrikam",
                 jobUrl = "https://www.linkedin.com/jobs/view/654321",
                 jobDescription = "Another sample description for preview.",
@@ -104,16 +110,16 @@ private fun JobListScreenPreview() {
                 timestamp = System.currentTimeMillis() - 86_400_000
             ),
             JobEntity(
-                id = 3,
+                id = "preview-3",
                 companyName = "Fabrikam",
                 jobUrl = "https://www.linkedin.com/jobs/view/654324",
                 jobDescription = "Another sample description for preview.",
                 jobTitle = "Product Manager",
-                status = JobStatus.OFFER,
+                status = JobStatus.INTERVIEW,
                 timestamp = System.currentTimeMillis() - 86_400_000
             ),
             JobEntity(
-                id = 4,
+                id = "preview-4",
                 companyName = "Fabrikam",
                 jobUrl = "https://www.linkedin.com/jobs/view/654325",
                 jobDescription = "Another sample description for preview.",
@@ -122,7 +128,7 @@ private fun JobListScreenPreview() {
                 timestamp = System.currentTimeMillis() - 86_400_000
             ),
             JobEntity(
-                id = 5,
+                id = "preview-5",
                 companyName = "Fabrikam",
                 jobUrl = "https://www.linkedin.com/jobs/view/654321",
                 jobDescription = "Another sample description for preview.",
@@ -139,8 +145,7 @@ private fun JobListScreenPreview() {
             statusFilter = null,
             isScraping = false,
             message = null,
-            lastSyncTime = "Never",
-            onSyncFromCloud = {},
+            cloudHealth = "Cloud: Offline",
             onSearchQueryChange = {},
             onStatusFilterChange = {},
             onStatusChange = { _, _ -> },

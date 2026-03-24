@@ -1,42 +1,56 @@
 package com.thewalkersoft.linkedin_job_tracker.data
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "jobs")
+@Entity(
+    tableName = "jobs",
+    indices = [Index(value = ["jobUrl"], unique = true)]
+)
 data class JobEntity(
-    @PrimaryKey(autoGenerate = true)
-    val id: Long = 0,
+    @PrimaryKey
+    val id: String,
     val companyName: String,
     val jobUrl: String,
     val jobDescription: String,
-    val jobTitle: String = "", // Job title from LinkedIn
+    val jobTitle: String = "",
     val status: JobStatus = JobStatus.SAVED,
     val timestamp: Long = System.currentTimeMillis(),
-    val lastModified: Long = System.currentTimeMillis() // Track last modification for sync
+    val lastModified: Long = System.currentTimeMillis(),
+    val matchScore: Int? = null,
+    val language: String = "English",
+    val prepNotes: String? = null,
+    val sourcePlatform: String? = null,
+    val filterReason: String? = null,
+    val createdAt: String? = null,
+    val updatedAt: String? = null
 )
 
 enum class JobStatus {
     SAVED,
     APPLIED,
-    INTERVIEWING,
-    OFFER,
+    INTERVIEW,
     RESUME_REJECTED,
     INTERVIEW_REJECTED
 }
 
 fun JobStatus.displayName(): String {
     return when (this) {
-        JobStatus.RESUME_REJECTED -> "RESUME-REJECTED"
-        JobStatus.INTERVIEW_REJECTED -> "INTERVIEW-REJECTED"
-        else -> name.replace("_", " ")
+        JobStatus.SAVED -> "Saved"
+        JobStatus.APPLIED -> "Applied"
+        JobStatus.INTERVIEW -> "Interview"
+        JobStatus.RESUME_REJECTED -> "Resume-Rejected"
+        JobStatus.INTERVIEW_REJECTED -> "Interview-Rejected"
     }
 }
 
 fun parseJobStatus(value: String): JobStatus {
-    val normalized = value.trim().uppercase().replace("-", "_")
+    val normalized = value.trim().uppercase().replace("-", "_").replace(" ", "_")
     return when (normalized) {
         "REJECTED" -> JobStatus.RESUME_REJECTED
+        "INTERVIEWING" -> JobStatus.INTERVIEW
+        "OFFER" -> JobStatus.INTERVIEW
         else -> runCatching { JobStatus.valueOf(normalized) }.getOrDefault(JobStatus.SAVED)
     }
 }

@@ -243,10 +243,9 @@ private fun StatusChipLarge(
     modifier: Modifier = Modifier
 ) {
     val containerColor = when (status) {
-        JobStatus.OFFER -> JobOfferGreen.copy(alpha = 0.35f)
         JobStatus.RESUME_REJECTED -> JobResumeRejectedRed.copy(alpha = 0.35f)
         JobStatus.INTERVIEW_REJECTED -> JobInterviewRejectedRed.copy(alpha = 0.35f)
-        JobStatus.INTERVIEWING -> JobInterviewingYellow.copy(alpha = 0.35f)
+        JobStatus.INTERVIEW -> JobInterviewingYellow.copy(alpha = 0.35f)
         JobStatus.APPLIED -> JobAppliedBlue.copy(alpha = 0.35f)
         JobStatus.SAVED -> JobSavedGray.copy(alpha = 0.35f)
     }
@@ -320,6 +319,7 @@ fun JobDetailsScreenPreview() {
     LinkedIn_Job_TrackerTheme {
         JobDetailsScreen(
             job = JobEntity(
+                id = "job-details-preview",
                 companyName = "Google",
                 jobUrl = "https://careers.google.com/jobs/results/12345/",
                 jobDescription = "Software Engineer position at Google. This is a sample job description. The ideal candidate will have experience with Kotlin, Jetpack Compose, and Android development. They should also be familiar with modern Android development practices and have a passion for creating beautiful and performant user interfaces.",

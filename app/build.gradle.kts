@@ -18,6 +18,12 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        val supabaseUrl = (project.findProperty("SUPABASE_URL") as? String ?: "")
+        val supabasePublishableKey =
+            (project.findProperty("SUPABASE_PUBLISHABLE_KEY") as? String ?: "")
+        buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
+        buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", "\"$supabasePublishableKey\"")
     }
 
     buildTypes {
@@ -35,6 +41,13 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
+    }
+
+    sourceSets {
+        getByName("androidTest") {
+            assets.srcDir("$projectDir/schemas")
+        }
     }
 }
 
@@ -57,6 +70,7 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.androidx.room.testing)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
@@ -75,4 +89,7 @@ dependencies {
     implementation(libs.retrofit.main)
     implementation(libs.retrofit.gson)
     implementation(libs.okhttp.logging)
+
+    // Background retry scheduler for offline outbox replay.
+    implementation(libs.androidx.work.runtime.ktx)
 }
