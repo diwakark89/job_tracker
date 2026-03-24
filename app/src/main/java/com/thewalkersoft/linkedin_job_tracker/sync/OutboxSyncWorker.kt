@@ -45,7 +45,11 @@ class OutboxSyncWorker(
             }
         }
 
-        repository.pullCloudJobsToRoom()
+        val pullResult = repository.pullCloudJobsToRoom()
+        preferences.saveLastSyncFailedPushCount(pullResult.failedPush)
+        if (pullResult.success && pullResult.failedPush == 0) {
+            preferences.saveLastSyncTimeMillis(System.currentTimeMillis())
+        }
         return Result.success()
     }
 }

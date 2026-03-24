@@ -31,6 +31,14 @@ class PreferencesManager(context: Context) {
         return sharedPreferences.getString(KEY_LAST_SYNC_TIME, "Never") ?: "Never"
     }
 
+    fun saveLastSyncFailedPushCount(count: Int) {
+        sharedPreferences.edit().putInt(KEY_LAST_SYNC_FAILED_PUSH_COUNT, count.coerceAtLeast(0)).apply()
+    }
+
+    fun getLastSyncFailedPushCount(): Int {
+        return sharedPreferences.getInt(KEY_LAST_SYNC_FAILED_PUSH_COUNT, 0)
+    }
+
     fun enqueueOperation(operation: OutboxOperation): Int {
         val all = (getOutboxOperations() + operation)
         val compacted = compactOperations(all)
@@ -79,6 +87,7 @@ class PreferencesManager(context: Context) {
         editor.remove(KEY_METRIC_ROLLING_QUEUED)
         editor.remove(KEY_METRIC_ROLLING_COMPACTED)
         editor.remove(KEY_METRIC_ROLLING_REPLAYED)
+        editor.remove(KEY_LAST_SYNC_FAILED_PUSH_COUNT)
         editor.apply()
     }
 
@@ -192,6 +201,7 @@ class PreferencesManager(context: Context) {
         private const val PREFERENCES_NAME = "linkedin_job_tracker_prefs"
         private const val KEY_LAST_SYNC_TIME = "last_sync_time"
         private const val KEY_LAST_SYNC_TIME_MILLIS = "last_sync_time_millis"
+        private const val KEY_LAST_SYNC_FAILED_PUSH_COUNT = "last_sync_failed_push_count"
 
         private const val KEY_OUTBOX_KEYS = "outbox_keys"
         private const val KEY_OUTBOX_ITEM_PREFIX = "outbox_item_"

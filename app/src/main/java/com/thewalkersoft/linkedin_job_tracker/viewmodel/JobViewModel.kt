@@ -107,8 +107,12 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
 
         // 1. Warm Room cache from cloud
         viewModelScope.launch {
-            val didSync = repository.pullCloudJobsToRoom()
-            if (didSync) preferencesManager.saveLastSyncTimeMillis(System.currentTimeMillis())
+            val pullResult = repository.pullCloudJobsToRoom()
+            preferencesManager.saveLastSyncFailedPushCount(pullResult.failedPush)
+            if (pullResult.success && pullResult.failedPush == 0) {
+                preferencesManager.saveLastSyncTimeMillis(System.currentTimeMillis())
+            }
+            refreshCloudHealth()
         }
 
         // 2. Open WebSocket – UI recomposes on every INSERT/UPDATE/DELETE
@@ -195,6 +199,9 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
                 )
             )
             OutboxWorkScheduler.kick(getApplication())
+        } else {
+            preferencesManager.saveLastSyncFailedPushCount(0)
+            preferencesManager.saveLastSyncTimeMillis(System.currentTimeMillis())
         }
         refreshCloudHealth()
         _message.value = "Shared link queued for processing"
@@ -287,6 +294,7 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
             )
             OutboxWorkScheduler.kick(getApplication())
         } else {
+            preferencesManager.saveLastSyncFailedPushCount(0)
             preferencesManager.saveLastSyncTimeMillis(System.currentTimeMillis())
         }
         refreshCloudHealth()
@@ -307,6 +315,7 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
             )
             OutboxWorkScheduler.kick(getApplication())
         } else {
+            preferencesManager.saveLastSyncFailedPushCount(0)
             preferencesManager.saveLastSyncTimeMillis(System.currentTimeMillis())
         }
         refreshCloudHealth()
@@ -315,6 +324,7 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
     private fun refreshCloudHealth() {
         val state = realtimeManager.connectionState.value
         val queueSize = preferencesManager.getOutboxOperations().size
+        val failedPush = preferencesManager.getLastSyncFailedPushCount()
         val (rQ, rC, rR) = preferencesManager.getRollingMetricsSummary()
         val lastMs = preferencesManager.getLastSyncTimeMillis()
         val lastLabel = if (lastMs != null)
@@ -326,8 +336,14 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
             RealtimeConnectionState.DISCONNECTED -> "Offline ○"
             RealtimeConnectionState.ERROR        -> "Error ⚠"
         }
+        val syncLabel = when {
+            failedPush > 0 -> "Failed($failedPush)"
+            queueSize > 0 -> "Pending($queueSize)"
+            state == RealtimeConnectionState.CONNECTED -> "Synced"
+            else -> "Idle"
+        }
         _cloudHealth.value =
-            "Cloud: $stateLabel | Queue: $queueSize | 60m q/c/r: $rQ/$rC/$rR | Last: $lastLabel"
+            "Cloud: $stateLabel | Sync: $syncLabel | Queue: $queueSize | 60m q/c/r: $rQ/$rC/$rR | Last: $lastLabel"
     }
 
     // ── Diagnostics (debug-only) ──────────────────────────────────────────────

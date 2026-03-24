@@ -10,6 +10,15 @@ class SupabaseRepository(
     private val dao: JobDao
 ) {
 
+    data class PullResult(
+        val success: Boolean,
+        val inserted: Int = 0,
+        val updatedFromRemote: Int = 0,
+        val uploaded: Int = 0,
+        val preservedLocal: Int = 0,
+        val failedPush: Int = 0
+    )
+
     fun isConfigured(): Boolean = SupabaseClient.isCloudConfigured()
 
     suspend fun pushJob(job: JobEntity): Boolean {
@@ -65,8 +74,8 @@ class SupabaseRepository(
         }
     }
 
-    suspend fun pullCloudJobsToRoom(): Boolean {
-        if (!isConfigured()) return false
+    suspend fun pullCloudJobsToRoom(): PullResult {
+        if (!isConfigured()) return PullResult(success = false)
         return runCatching {
             val remoteJobs = SupabaseClient.instance.getJobs()
             val localJobs = dao.getAllJobsOnce()
@@ -135,10 +144,17 @@ class SupabaseRepository(
                 "SupabaseRepository",
                 "pullCloudJobsToRoom: inserted=$inserted updatedFromRemote=$updatedFromRemote uploaded=$uploaded preservedLocal=$preservedLocal failedPush=$failedPush"
             )
-            true
+            PullResult(
+                success = true,
+                inserted = inserted,
+                updatedFromRemote = updatedFromRemote,
+                uploaded = uploaded,
+                preservedLocal = preservedLocal,
+                failedPush = failedPush
+            )
         }.getOrElse {
             Log.w("SupabaseRepository", "pullCloudJobsToRoom failed: ${it.message}")
-            false
+            PullResult(success = false)
         }
     }
 
