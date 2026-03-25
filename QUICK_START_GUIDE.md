@@ -12,7 +12,7 @@
 1. **Open the Project**
    ```bash
    # Navigate to project directory
-   cd C:\DK_World\IT\MyProjects\LinkedIn_Job_Tracker
+   cd LinkedIn_Job_Tracker
    
    # Open with Android Studio or sync Gradle
    ./gradlew build
@@ -146,9 +146,14 @@ Week 2: Clean Up
 - **Edge-to-edge**: App uses full screen
 
 ### Visual Indicators
-- **Loading overlay**: Dimmed screen + spinner = scraping in progress
+- **Loading overlay**: Dimmed screen + spinner = scraping/syncing in progress
 - **Empty state**: Friendly message when no jobs
-- **Status colors**: Quick visual status recognition
+- **Status colors**: 
+  - 🟢 Green: Offer
+  - 🔴 Red: Resume Rejected / Interview Rejected
+  - 🟡 Yellow: Interviewing
+  - 🔵 Blue: Applied
+  - ⚪ Gray: Saved
 - **Swipe feedback**: Delete icon shows on swipe
 
 ## 🛠️ Troubleshooting
@@ -234,17 +239,24 @@ enum class JobStatus {
 
 ### Job Management
 1. **Save immediately**: Share jobs as you find them
-2. **Update status**: Keep statuses current
-3. **Add notes**: Use description field (future: add notes feature)
-4. **Regular cleanup**: Delete rejected/expired jobs
-5. **Search frequently**: Use search to find specific applications
+2. **Update status**: Keep statuses current for accurate tracking
+3. **Regular cleanup**: Delete rejected/expired jobs monthly
+4. **Search frequently**: Use search to locate specific applications
+5. **Review descriptions**: Expand cards to read full job details
 
-### Status Updates
-1. Start as "Saved"
-2. Change to "Applied" when submitted
-3. Update to "Interviewing" when scheduled
-4. Mark "Offer" or "Rejected" based on result
-5. Delete or keep for reference
+### Performance Tips
+1. **Batch sharing**: Share multiple jobs in succession (scraping runs on IO thread)
+2. **Minimize manual sync**: App auto-syncs on every mutation
+3. **Offline capability**: App works offline—jobs sync when connection returns
+4. **Storage**: Job data stored locally—no cloud dependency except optional sync
+5. **Battery**: Scraping runs on background thread, doesn't drain battery
+
+### Status Update Best Practices
+1. Start all jobs as **"Saved"** (gray)
+2. Change to **"Applied"** when you submit the application
+3. Update to **"Interviewing"** when an interview is scheduled
+4. Mark **"Offer"** (green) or **"Resume-Rejected"** / **"Interview-Rejected"** (red) based on outcome
+5. Delete or archive offers after accepting one
 
 ## 🎓 Learning Resources
 

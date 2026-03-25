@@ -1,11 +1,12 @@
 # Project Architecture Blueprint
 
-Generated on: 2026-03-18
+Generated on: 2026-03-25
 Project: LinkedIn Job Tracker Pro
+Last Updated: 2026-03-25 (Current Date)
 
 ## 1) Architecture Detection and Analysis
 
-- Primary stack: Android (Kotlin), Jetpack Compose (Material3), Room, Coroutines/Flow, Retrofit + OkHttp, JSoup.
+- Primary stack: Android (Kotlin), Jetpack Compose (Material 3), Room (KSP), Coroutines/Flow, Retrofit + OkHttp, JSoup.
 - Build system: Gradle Kotlin DSL with version catalog (`gradle/libs.versions.toml`).
 - Primary pattern: MVVM with a single application ViewModel (`JobViewModel`) coordinating UI state, persistence, scraping, and cloud sync.
 - Supporting pattern: Layered monolith (UI -> ViewModel -> Data/Services -> External systems).
@@ -187,6 +188,8 @@ No circular dependency is visible in current package structure.
 - Domain fields: `companyName`, `jobTitle`, `jobDescription`, `status`.
 - Temporal fields: `timestamp` (created-ish display ordering), `lastModified` (sync conflict resolution).
 
+**Critical**: Every local mutation (add, update, delete) **must** update `lastModified = System.currentTimeMillis()` or sync conflict resolution will fail.
+
 ### 6.2 Status Model
 
 `JobStatus` values:
@@ -363,15 +366,16 @@ val jobs: StateFlow<List<JobEntity>> = combine(
 }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 ```
 
-### 14.2 Conflict Resolution Core
+### 14.2 Conflict Resolution Core (Newer-Wins with Local Tie-Break)
 
 ```kotlin
 return if (localModified > sheetModified) {
-    ConflictResolution.UPDATE_SHEET
+    ConflictResolution.UPDATE_SHEET        // Local is newer → sync to sheet
 } else if (sheetModified > localModified) {
-    ConflictResolution.UPDATE_LOCAL
+    ConflictResolution.UPDATE_LOCAL        // Sheet is newer → sync to local
 } else {
-    ConflictResolution.UPDATE_BOTH
+    // Equal timestamps → local takes precedence (deterministic tie-breaking)
+    ConflictResolution.UPDATE_BOTH         // App version is authoritative
 }
 ```
 

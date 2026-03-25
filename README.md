@@ -207,11 +207,12 @@ jsoup = { group = "org.jsoup", name = "jsoup", version.ref = "jsoup" }
 - `Flow` - Reactive data streams
 - `StateFlow` - State management
 
-### Room Features
-- `@Upsert` - Insert or update operation
-- `@TypeConverters` - Enum to String conversion
-- `Flow` - Observable queries
-- Schema export enabled
+### Room Features & Configuration
+- **@Upsert**: Always use `@Upsert` (never `@Insert` with `OnConflictStrategy`)
+- **@TypeConverters**: `JobStatus` enum converted to/from String
+- **Flow**: Observable queries for reactive UI binding
+- **Schema export**: `exportSchema = true` in `@Database` annotation
+- **KSP compilation**: Uses KSP processor (configured in `build.gradle.kts`)
 
 ## Testing
 
@@ -238,20 +239,81 @@ jsoup = { group = "org.jsoup", name = "jsoup", version.ref = "jsoup" }
 
 ### Common Issues
 
-#### Jobs not saving
-- Check INTERNET permission in manifest
-- Verify intent filter is correctly configured
-- Check logcat for scraping errors
+#### App crashes on share
+**Problem**: App crashes when sharing from LinkedIn
 
-#### Scraping fails
-- LinkedIn may have changed their HTML structure
-- Update selectors in JobScraper.kt
-- Check network connectivity
+**Solutions**:
+1. Verify `INTERNET` permission in `AndroidManifest.xml` ✓
+2. Check intent filter matches `action.SEND` with `text/plain` ✓
+3. Examine Logcat for `MainActivity` intent parsing errors
+4. Ensure device has active internet connection
+5. Try re-sharing if network is unstable
 
-#### Database errors
-- Clear app data and reinstall
-- Check Room schema version
-- Verify TypeConverters are registered
+#### No description scraped / "Unable to scrape" message
+**Problem**: Job card shows empty description or fallback text
+
+**Possible causes**:
+1. LinkedIn updated HTML structure (most common)
+2. Network timeout (check connection)
+3. URL parsing failed in regex
+4. JSoup selector chains all failed
+
+**Fix**:
+1. Check Logcat for scraper error details
+2. Inspect LinkedIn job page HTML (view source)
+3. Update CSS selectors in `JobScraper.kt` selectors list
+4. Add new selector to priority chain
+
+#### Jobs not appearing in list
+**Problem**: Shared job doesn't appear after scraping
+
+**Debug steps**:
+1. Check if loading overlay appeared (network call made)
+2. Search for company name (may be filtered)
+3. Verify database insert in Logcat (`Room.*` logs)
+4. Check ViewModel state with debugger breakpoint
+5. Ensure job URL is valid and accessible
+
+#### Sync not working or appearing stale
+**Problem**: Changes not reflected in Google Sheets or vice versa
+
+**Troubleshooting**:
+1. Verify internet connection and DEPLOYMENT_ID in `RetrofitClient.kt`
+2. Check Google Apps Script is deployed (visit deployment URL directly)
+3. Confirm sheet name is "Linkedin Job Tracker Sheet" (exact case)
+4. Verify `lastModified` timestamp is being updated on mutations
+5. Check Logcat for `Sync` tag messages
+6. Ensure Google account has access to the sheet
+
+#### Build errors or Gradle sync issues
+**Problem**: `./gradlew build` fails or Gradle sync hangs
+
+**Solutions**:
+1. Clean project: `./gradlew clean`
+2. Invalidate Gradle cache: `./gradlew --stop`
+3. Update gradle.properties with correct Gradle path
+4. Ensure Java 11+ is installed and set in JAVA_HOME
+5. Check that KSP is configured (not KAPT)
+
+#### Room migration errors
+**Problem**: "Migration from X to Y is required" error on app start
+
+**Solutions**:
+1. Verify migration objects exist in `JobDatabase.kt`
+2. Check migration SQL is correct for your schema change
+3. Never use `fallbackToDestructiveMigration()` (data loss)
+4. Commit `app/schemas/` JSON files to version control
+5. Ensure migration version numbers are sequential
+
+#### Retrofit API calls fail silently
+**Problem**: Cloud sync doesn't work but no error appears
+
+**Debug**:
+1. Enable OkHttp logging interceptor (already configured)
+2. Check Logcat for `HTTP` tag messages
+3. Verify DEPLOYMENT_ID is current (redeploy Apps Script if needed)
+4. Test Apps Script URL directly in browser
+5. Check Google Sheet sheet permissions and sharing
 
 ## License
 

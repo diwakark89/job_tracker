@@ -144,11 +144,11 @@ Result: Company D is downloaded to app
 ## Migration Notes
 
 ### Database Version Update
-- Old version: `1`
-- New version: `2`
-- Migration strategy: `fallbackToDestructiveMigration()`
-- **⚠️ Warning**: First launch after update will clear local database
-- Solution: Sync from Google Sheets after update to restore data
+- Old version: `2`
+- New version: `3`
+- Migration strategy: **Explicit Migration objects** (safe, non-destructive)
+- **No data loss**: All existing jobs are preserved during migration
+- Migrations: `1→2` (add lastModified), `2→3` (add jobTitle)
 
 ### Google Apps Script Update
 You need to redeploy the Google Apps Script with the updated code:
@@ -207,6 +207,6 @@ You need to redeploy the Google Apps Script with the updated code:
 
 ---
 
-**Last Updated**: February 11, 2026
-**Version**: 2.0.0
+**Last Updated**: March 25, 2026
+**Version**: 3.0.0
 
