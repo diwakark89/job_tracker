@@ -44,7 +44,7 @@ async def scrape_jobs_tool(
 ) -> str:
     """
     Search for jobs across multiple job boards including LinkedIn, Indeed, Glassdoor, 
-    ZipRecruiter, Google Jobs, Bayt, Naukri, and BDJobs.
+    ZipRecruiter, Google Jobs, Bayt, Naukri, Stepstone, and Xing.
     
     Args:
         search_term: Job search keywords (e.g., 'software engineer', 'data scientist')
@@ -72,7 +72,7 @@ async def scrape_jobs_tool(
         await ctx.info(f"Searching for '{search_term}' jobs...")
         
         # Validate site names
-        valid_sites = ["linkedin", "indeed", "glassdoor", "zip_recruiter", "google", "bayt", "naukri", "bdjobs"]
+        valid_sites = ["linkedin", "indeed", "glassdoor", "zip_recruiter", "google", "bayt", "naukri", "stepstone", "xing"]
         invalid_sites = [site for site in site_name if site not in valid_sites]
         if invalid_sites:
             return f"Error: Invalid site names: {invalid_sites}. Valid sites: {valid_sites}"
@@ -281,7 +281,8 @@ def get_supported_sites() -> str:
             "google": "Google Jobs - Aggregated job listings from Google (use specific search terms)",
             "bayt": "Bayt - Middle East focused job portal",
             "naukri": "Naukri - India's leading job portal with detailed job information",
-            "bdjobs": "BDJobs - Bangladesh's premier job portal"
+            "stepstone": "Stepstone - Leading European job board, strong in Germany and DACH region",
+            "xing": "Xing - German professional networking platform with job listings"
         }
         
         response = "## 🔗 Supported Job Board Sites\n\n"
@@ -291,7 +292,8 @@ def get_supported_sites() -> str:
         response += "\n## 💡 Usage Tips\n"
         response += "- **Best for beginners**: Start with `[\'indeed\', \'zip_recruiter\']`\n"
         response += "- **For comprehensive search**: Use `[\'indeed\', \'linkedin\', \'glassdoor\', \'google\']`\n"
-        response += "- **For specific regions**: Include regional sites like 'bayt', 'naukri', 'bdjobs'\n"
+        response += "- **For specific regions**: Include regional sites like 'bayt', 'naukri'\n"
+        response += "- **For DACH region**: Use 'stepstone' or 'xing' for German/European jobs\n"
         response += "- **Rate limiting**: LinkedIn is most restrictive, Indeed is most reliable\n"
         
         return response

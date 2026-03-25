@@ -5,12 +5,13 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import pandas as pd
 
 from jobspy_mcp_server.jobspy_scrapers.bayt import BaytScraper
-from jobspy_mcp_server.jobspy_scrapers.bdjobs import BDJobs
 from jobspy_mcp_server.jobspy_scrapers.glassdoor import Glassdoor
 from jobspy_mcp_server.jobspy_scrapers.google import Google
 from jobspy_mcp_server.jobspy_scrapers.indeed import Indeed
 from jobspy_mcp_server.jobspy_scrapers.linkedin import LinkedIn
 from jobspy_mcp_server.jobspy_scrapers.naukri import Naukri
+from jobspy_mcp_server.jobspy_scrapers.stepstone import StepstoneScraper
+from jobspy_mcp_server.jobspy_scrapers.xing import XingScraper
 from jobspy_mcp_server.jobspy_scrapers.model import JobType, Location, JobResponse, Country
 from jobspy_mcp_server.jobspy_scrapers.model import SalarySource, ScraperInput, Site
 from jobspy_mcp_server.jobspy_scrapers.util import (
@@ -60,7 +61,8 @@ def scrape_jobs(
         Site.GOOGLE: Google,
         Site.BAYT: BaytScraper,
         Site.NAUKRI: Naukri,
-        Site.BDJOBS: BDJobs,
+        Site.STEPSTONE: StepstoneScraper,
+        Site.XING: XingScraper,
     }
     set_logger_level(verbose)
     job_type = get_enum_from_value(job_type) if job_type else None

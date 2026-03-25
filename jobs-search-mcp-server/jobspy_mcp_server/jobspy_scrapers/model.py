@@ -292,7 +292,8 @@ class Site(Enum):
     GOOGLE = "google"
     BAYT = "bayt"
     NAUKRI = "naukri"
-    BDJOBS = "bdjobs"
+    STEPSTONE = "stepstone"
+    XING = "xing"
 
 
 class SalarySource(Enum):

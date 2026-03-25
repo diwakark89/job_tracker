@@ -190,6 +190,8 @@ class TestJobSpyMCPServer:
         assert "linkedin" in result
         assert "indeed" in result
         assert "glassdoor" in result
+        assert "stepstone" in result
+        assert "xing" in result
         assert "Usage Tips" in result
     
     def test_job_search_tips(self):
@@ -215,6 +217,8 @@ class TestJobSpyIntegration:
         try:
             from jobspy_mcp_server.jobspy_scrapers import scrape_jobs
             from jobspy_mcp_server.jobspy_scrapers.model import Site, Country, JobType
+            from jobspy_mcp_server.jobspy_scrapers.stepstone import StepstoneScraper
+            from jobspy_mcp_server.jobspy_scrapers.xing import XingScraper
             assert True
         except ImportError:
             pytest.skip("Vendored JobSpy modules not importable")

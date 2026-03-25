@@ -9,7 +9,7 @@ The scraper implementation is vendored directly in this repository; no external 
 ## Features
 
 - **4 MCP tools** — `scrape_jobs_tool`, `get_supported_countries`, `get_supported_sites`, `get_job_search_tips`
-- **8 job boards** — LinkedIn, Indeed, Glassdoor, ZipRecruiter, Google Jobs, Bayt (Middle East), Naukri (India), BDJobs (Bangladesh)
+- **9 job boards** — LinkedIn, Indeed, Glassdoor, ZipRecruiter, Google Jobs, Bayt (Middle East), Naukri (India), Stepstone (Germany/DACH), Xing (Germany)
 - **Rich result output** — title, company, location, salary range, job type, remote flag, apply URL, description preview
 - **Advanced filtering** — job type, remote-only, posting age, distance, easy apply, pagination offset
 - **Progress reporting** — real-time progress updates via MCP context
@@ -54,7 +54,8 @@ jobspy-mcp-server/
 │       ├── ziprecruiter/      # ZipRecruiter scraper
 │       ├── bayt/              # Bayt (Middle East) scraper
 │       ├── naukri/            # Naukri (India) scraper
-│       └── bdjobs/            # BDJobs (Bangladesh) scraper
+│       ├── stepstone/         # Stepstone (Germany/DACH) scraper
+│       └── xing/              # Xing (Germany) scraper
 ├── test/
 │   ├── test_jobspy_mcp.py     # Unit tests (mocked)
 │   └── test_server.py         # MCP protocol smoke test
@@ -270,7 +271,7 @@ Search for jobs across multiple job boards.
 |---|---|---|---|
 | `search_term` | string | **required** | Main search keyword(s), for example `"python developer"`. |
 | `location` | string | `null` | Location filter (city/state/country/region). |
-| `site_name` | list[string] | `["indeed","linkedin","zip_recruiter","google"]` | Supported values: `linkedin`, `indeed`, `glassdoor`, `zip_recruiter`, `google`, `bayt`, `naukri`, `bdjobs`. |
+| `site_name` | list[string] | `["indeed","linkedin","zip_recruiter","google"]` | Supported values: `linkedin`, `indeed`, `glassdoor`, `zip_recruiter`, `google`, `bayt`, `naukri`, `stepstone`, `xing`. |
 | `results_wanted` | int | `15` | Desired result count. Some providers cap internally (see provider table below). |
 | `job_type` | string | `null` | Supported values come from the internal `JobType` enum: `fulltime`, `parttime`, `internship`, `contract`, `temporary`, `other` and more aliases. |
 | `is_remote` | bool | `false` | Enables remote-only filtering where supported. |
@@ -325,7 +326,8 @@ Give me tips for finding jobs faster
 | `google` | Google Jobs | Global aggregation | Query-built scraping with optional `google_search_term` override (internal API), plus support for remote/job_type/hours_old/location. Results capped internally at 900. |
 | `bayt` | Bayt | Middle East focus | HTML parsing flow. Uses search term and paging primarily; advanced filters are limited. |
 | `naukri` | Naukri | India focus | JSON API flow with extra fields (`skills`, `experience_range`, `company_rating`, etc.). Supports location/remote/hours_old and optional detailed description fetch. |
-| `bdjobs` | BDJobs | Bangladesh focus | HTML parser with region-specific endpoint. Primarily search term + paging oriented; advanced filters are limited. |
+| `stepstone` | Stepstone | Germany/DACH focus | HTML parsing flow. Supports search term, location, distance, and paging. Strong coverage for German and European job markets. |
+| `xing` | Xing | Germany focus | HTML parsing flow. Supports search term, location, and paging. German professional networking platform with job listings. |
 
 ### Provider Parameter Support Matrix
 
@@ -340,7 +342,8 @@ Legend: `Yes` = directly supported, `Partial` = supported with caveat/provider-s
 | Google Jobs | Yes | No | No | Yes | Yes | Yes | No | Yes | No |
 | Bayt | Partial | No (fixed worldwide) | No | No | No | No | No | Partial | No |
 | Naukri | Yes | No (India focus) | No | Yes | No | Yes | No | Yes | Yes |
-| BDJobs | Partial | No (Bangladesh focus) | No | No | No | No | No | Partial | No |
+| Stepstone | Yes | No (Germany focus) | Yes | No | No | No | No | Partial | No |
+| Xing | Yes | No (Germany focus) | No | No | No | No | No | Partial | No |
 
 ### Provider Caveats and Limits
 
@@ -349,7 +352,8 @@ Legend: `Yes` = directly supported, `Partial` = supported with caveat/provider-s
 - Glassdoor: internally caps requested results to 900.
 - Google Jobs: internally caps requested results to 900 and depends on cursor availability.
 - ZipRecruiter: strongest fit for US/Canada; global behavior is limited.
-- Bayt, Naukri, BDJobs: regional providers with fewer advanced filter guarantees.
+- Bayt, Naukri: regional providers with fewer advanced filter guarantees.
+- Stepstone, Xing: German/DACH regional providers with HTML-based scraping.
 
 ---
 
