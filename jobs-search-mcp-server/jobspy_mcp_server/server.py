@@ -6,6 +6,7 @@ An MCP server that provides job scraping capabilities using the JobSpy library.
 Built with FastMCP for modern MCP protocol compliance.
 """
 
+import argparse
 import logging
 
 import pandas as pd
@@ -395,12 +396,52 @@ Happy job hunting! 🚀"""
 
 # Entry point for running the server
 def main():
-    """Run the JobSpy MCP server."""
+    """Run the JobSpy MCP server.
+
+    Supports multiple transports:
+      - stdio (default): for MCP clients like Claude Desktop, Cursor
+      - sse: Server-Sent Events over HTTP (legacy HTTP transport)
+      - streamable-http: modern MCP HTTP transport
+    """
+    parser = argparse.ArgumentParser(
+        description="JobSpy MCP Server — job scraping as AI-callable tools"
+    )
+    parser.add_argument(
+        "--transport",
+        choices=["stdio", "sse", "streamable-http"],
+        default="stdio",
+        help="MCP transport to use (default: stdio)",
+    )
+    parser.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="Host to bind when using sse or streamable-http (default: 127.0.0.1)",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=8765,
+        help="Port to bind when using sse or streamable-http (default: 8765)",
+    )
+    args = parser.parse_args()
+
     logger.info("Starting JobSpy MCP Server...")
-    logger.info("Server is ready and waiting for MCP client connections...")
+    logger.info("Transport: %s", args.transport)
+    if args.transport != "stdio":
+        logger.info("Listening on http://%s:%d", args.host, args.port)
+    else:
+        logger.info("Server is ready and waiting for MCP client connections...")
     logger.info("Use Ctrl+C to stop the server")
+
     try:
-        mcp.run(transport="stdio")
+        if args.transport == "stdio":
+            mcp.run(transport="stdio")
+        else:
+            mcp.run(
+                transport=args.transport,
+                host=args.host,
+                port=args.port,
+            )
     except KeyboardInterrupt:
         logger.info("Server stopped by user")
     except Exception as e:

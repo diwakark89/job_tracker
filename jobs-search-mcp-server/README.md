@@ -175,6 +175,48 @@ macOS config path: `~/Library/Application Support/Claude/claude_desktop_config.j
 
 After editing the config, restart Claude Desktop.
 
+### OpenClaw
+
+OpenClaw does not have native MCP client support, so the integration uses two bridges:
+
+| Method | OpenClaw Tool | Transport | Best For |
+|--------|--------------|-----------|----------|
+| **CLI wrapper** | `exec` | stdin/stdout | Quick setup, no server process |
+| **HTTP endpoint** | `web_fetch` | SSE / Streamable-HTTP | Persistent service, multiple clients |
+
+**Quick start — CLI (exec):**
+
+```bash
+# Install the package (once)
+pip install -e /path/to/jobspy-mcp-server
+
+# Test the CLI
+jobspy-search "python developer" --location "New York" --sites linkedin --results 5
+```
+
+**Quick start — HTTP (web_fetch):**
+
+```bash
+# Start the server with SSE transport
+jobspy-mcp-server --transport sse --host 127.0.0.1 --port 8765
+
+# SSE endpoint: GET  http://127.0.0.1:8765/sse
+# Messages:     POST http://127.0.0.1:8765/messages
+```
+
+An OpenClaw Skill is included at [`assets/openclaw-skill/SKILL.md`](assets/openclaw-skill/SKILL.md).  
+Copy it to your OpenClaw workspace:
+
+```bash
+# Windows
+copy assets\openclaw-skill\SKILL.md %USERPROFILE%\.openclaw\workspace\skills\jobspy-search\SKILL.md
+
+# macOS / Linux
+cp assets/openclaw-skill/SKILL.md ~/.openclaw/workspace/skills/jobspy-search/SKILL.md
+```
+
+For the full integration guide — endpoints, JSON-RPC examples, troubleshooting — see [`docs/openclaw-integration.md`](docs/openclaw-integration.md).
+
 ---
 
 ## How to Search for Jobs

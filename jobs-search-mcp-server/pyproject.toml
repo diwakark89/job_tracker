@@ -32,6 +32,7 @@ dependencies = [
     "tls-client>=1.0.1",
     "markdownify>=1.1.0",
     "regex>=2024.4.28",
+    "uvicorn>=0.27.0",
 ]
 
 [project.optional-dependencies]
@@ -44,6 +45,7 @@ dev = [
 
 [project.scripts]
 jobspy-mcp-server = "jobspy_mcp_server:main"
+jobspy-search = "jobspy_mcp_server.cli:main"
 
 [tool.black]
 line-length = 88
