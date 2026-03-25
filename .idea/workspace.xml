@@ -1,0 +1,560 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AndroidLayouts">
+    <shared>
+      <config />
+    </shared>
+    <layouts>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/drawable/ic_job_tracker.xml">
+        <config>
+          <theme>@style/Theme.LinkedIn_Job_Tracker</theme>
+        </config>
+      </layout>
+    </layouts>
+  </component>
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="NONE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="14fb0cad-d1cc-4507-88a3-6476f685e3c0" name="Changes" comment="feat: Add Sync Dashboard and Pending Job Cards for enhanced job processing visibility">
+      <change beforePath="$PROJECT_DIR$/.github/agents/janitor.agent.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.github/agents/se-system-architecture-reviewer.agent.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.github/copilot-instructions.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.github/instructions/performance-optimization.instructions.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.github/skills/create-specification/SKILL.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.github/skills/refactor/SKILL.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/AGENTS.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ARCHITECTURE_DATAFLOW.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/BIDIRECTIONAL_SYNC.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/COMPLETION_CHECKLIST.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/DEPRECATED_GOOGLE_FILES.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/GoogleSheetUpdateScript.gs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/IMPLEMENTATION_SUMMARY.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Project_Architecture_Blueprint.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/QUICK_REFERENCE.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/QUICK_START_GUIDE.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/README_FEATURES.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/build.gradle.kts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/proguard-rules.pro" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/schemas/com.thewalkersoft.linkedin_job_tracker.data.JobDatabase/1.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/schemas/com.thewalkersoft.linkedin_job_tracker.data.JobDatabase/2.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/schemas/com.thewalkersoft.linkedin_job_tracker.data.JobDatabase/3.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/schemas/com.thewalkersoft.linkedin_job_tracker.data.JobDatabase/4.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/schemas/com.thewalkersoft.linkedin_job_tracker.data.JobDatabase/5.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/schemas/com.thewalkersoft.linkedin_job_tracker.data.JobDatabase/6.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/androidTest/java/com/thewalkersoft/linkedin_job_tracker/ExampleInstrumentedTest.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/androidTest/java/com/thewalkersoft/linkedin_job_tracker/data/JobDatabaseMigrationTest.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/AndroidManifest.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/thewalkersoft/linkedin_job_tracker/MainActivity.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/thewalkersoft/linkedin_job_tracker/client/RetrofitClient.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/thewalkersoft/linkedin_job_tracker/client/SupabaseClient.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/thewalkersoft/linkedin_job_tracker/data/JobDao.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/thewalkersoft/linkedin_job_tracker/data/JobDatabase.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/thewalkersoft/linkedin_job_tracker/data/JobEntity.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/thewalkersoft/linkedin_job_tracker/navigation/AppNavigation.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/thewalkersoft/linkedin_job_tracker/navigation/Screen.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/thewalkersoft/linkedin_job_tracker/scraper/JobScraper.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/thewalkersoft/linkedin_job_tracker/service/GoogleSheetApiService.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/thewalkersoft/linkedin_job_tracker/service/GoogleSheetResponse.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/thewalkersoft/linkedin_job_tracker/service/SupabaseApiService.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/thewalkersoft/linkedin_job_tracker/sync/OutboxOperation.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/thewalkersoft/linkedin_job_tracker/sync/OutboxSyncWorker.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/thewalkersoft/linkedin_job_tracker/sync/OutboxWorkScheduler.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/thewalkersoft/linkedin_job_tracker/sync/RealtimeJobEvent.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/thewalkersoft/linkedin_job_tracker/sync/SupabaseRealtimeManager.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/thewalkersoft/linkedin_job_tracker/sync/SupabaseRepository.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/thewalkersoft/linkedin_job_tracker/sync/SyncService.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/thewalkersoft/linkedin_job_tracker/ui/components/EditJobDialog.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/thewalkersoft/linkedin_job_tracker/ui/components/JobCard.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/thewalkersoft/linkedin_job_tracker/ui/components/LoadingOverlay.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/thewalkersoft/linkedin_job_tracker/ui/components/PendingJobCard.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/thewalkersoft/linkedin_job_tracker/ui/model/JobSyncDotState.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/thewalkersoft/linkedin_job_tracker/ui/screens/DiagnosticsResetDialog.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/thewalkersoft/linkedin_job_tracker/ui/screens/JobDetailsScreen.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/thewalkersoft/linkedin_job_tracker/ui/screens/JobListScreen.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/thewalkersoft/linkedin_job_tracker/ui/screens/SyncDashboardScreen.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/thewalkersoft/linkedin_job_tracker/ui/theme/Color.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/thewalkersoft/linkedin_job_tracker/ui/theme/Theme.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/thewalkersoft/linkedin_job_tracker/ui/theme/Type.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/thewalkersoft/linkedin_job_tracker/util/PreferencesManager.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/com/thewalkersoft/linkedin_job_tracker/viewmodel/JobViewModel.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/ic_job_tracker.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/ic_launcher_background.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/ic_launcher_foreground.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/mipmap-anydpi/ic_launcher.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/mipmap-anydpi/ic_launcher_round.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/mipmap-hdpi/ic_launcher.webp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/mipmap-hdpi/ic_launcher_round.webp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/mipmap-mdpi/ic_launcher.webp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/mipmap-mdpi/ic_launcher_round.webp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/mipmap-xhdpi/ic_launcher.webp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/mipmap-xhdpi/ic_launcher_round.webp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/mipmap-xxhdpi/ic_launcher.webp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.webp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.webp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/values/colors.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/values/strings.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/values/themes.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/xml/backup_rules.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/xml/data_extraction_rules.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/test/java/com/thewalkersoft/linkedin_job_tracker/ExampleUnitTest.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/test/java/com/thewalkersoft/linkedin_job_tracker/scraper/JobScraperTest.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build.gradle.kts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/gradle.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/gradle/gradle-daemon-jvm.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/gradle/libs.versions.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.jar" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/gradlew" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/gradlew.bat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/settings.gradle.kts" beforeDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="CopilotPersistence">
+    <persistenceIdMap>
+      <entry key="_C:/DK_World/IT/MyProjects/Job Tracker App/LinkedIn_Job_Tracker" value="39Og9cCgYr6ttT5xgGYPAWQzTFv" />
+      <entry key="_C:/DK_World/IT/MyProjects/LinkedIn_Job_Tracker" value="39HlKHl3saYQEKP8m9ns7xava7M" />
+    </persistenceIdMap>
+  </component>
+  <component name="CopilotUserSelectedChatMode">
+    <option name="chatModeId" value="Agent" />
+  </component>
+  <component name="CopilotUserSelectedModel">
+    <selectedModels>
+      <entry key="chat-panel" value="Auto" />
+      <entry key="agent-panel" value="Auto" />
+    </selectedModels>
+  </component>
+  <component name="EmbeddingIndexingInfo">
+    <option name="cachedIndexableFilesCount" value="118" />
+    <option name="fileBasedEmbeddingIndicesEnabled" value="true" />
+  </component>
+  <component name="ExecutionTargetManager" SELECTED_TARGET="device_and_snapshot_combo_box_target[LocalEmulator::path=C:\Users\DK\.android\avd\Pixel_9.avd]" />
+  <component name="ExternalProjectsData">
+    <projectState path="$PROJECT_DIR$">
+      <ProjectState />
+    </projectState>
+  </component>
+  <component name="ExternalProjectsManager">
+    <system id="GRADLE">
+      <state>
+        <projects_view>
+          <tree_state>
+            <expand>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="LinkedIn_Job_Tracker" type="f1a62948:ProjectNode" />
+              </path>
+            </expand>
+            <select />
+          </tree_state>
+        </projects_view>
+      </state>
+    </system>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Class" />
+        <option value="Kotlin Class" />
+      </list>
+    </option>
+  </component>
+  <component name="GenerateSignedApkSettings">
+    <option name="KEY_STORE_PATH" value="C:\DK_World\IT\MyProjects\Job Tracker App\Play Console\Job_tracker" />
+    <option name="KEY_ALIAS" value="key0" />
+    <option name="REMEMBER_PASSWORDS" value="true" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="main" />
+      </map>
+    </option>
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;diwakark89&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/diwakark89/job_tracker.git&quot;,
+    &quot;accountId&quot;: &quot;8f52226c-bae7-4b9e-9aa5-20e4496df552&quot;
+  }
+}</component>
+  <component name="GradleScriptDefinitionsStorage" workingDir="$PROJECT_DIR$" gradleHome="C:\Users\DK\.gradle\wrapper\dists\gradle-9.2.1-bin\2t0n5ozlw9xmuyvbp7dnzaxug\gradle-9.2.1" javaHome="C:\Program Files\Android\Android Studio\jbr" gradleVersion="9.2.1" />
+  <component name="McpProjectServerCommands">
+    <commands />
+    <urls />
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 3
+}</component>
+  <component name="ProjectId" id="39HlKHl3saYQEKP8m9ns7xava7M" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="1" id="Add" />
+  </component>
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Android App.app.executor": "Run",
+    "BundleExportedModule": "LinkedIn_Job_Tracker.app",
+    "ExportBundle.BundlePathForLinkedIn_Job_Tracker.app": "C:\\DK_World\\IT\\MyProjects\\Job Tracker App\\LinkedIn_Job_Tracker\\app",
+    "Gradle.Configure Daemon JVM Criteria.executor": "Run",
+    "GradleDaemonJvmCriteriaMigrationNotification.isNotificationDisabled": "true",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.MCP Project settings loaded": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "cf.first.check.clang-format": "false",
+    "cidr.known.project.marker": "true",
+    "com.google.services.firebase.aqiPopupShown": "true",
+    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
+    "copilot.sensitive.allow.copilot_read_file.files_outside_workspace": "true",
+    "git-widget-placeholder": "integration/open__claw",
+    "junie.onboarding.icon.badge.shown": "true",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/DK_World/IT/MyProjects/Job Tracker App/LinkedIn_Job_Tracker",
+    "project.structure.last.edited": "Modules",
+    "project.structure.proportion": "0.17",
+    "project.structure.side.proportion": "0.2",
+    "settings.editor.selected.configurable": "com.github.copilot.settings.customization.CustomizationConfigurable",
+    "to.speed.mode.migration.done": "true"
+  },
+  "keyToStringList": {
+    "ExportApk.BuildVariants": [
+      "release"
+    ]
+  }
+}]]></component>
+  <component name="RunManager">
+    <configuration name="app" type="AndroidRunConfigurationType" factoryName="Android App" activateToolWindowBeforeRun="false">
+      <module name="LinkedIn_Job_Tracker.app" />
+      <option name="ANDROID_RUN_CONFIGURATION_SCHEMA_VERSION" value="1" />
+      <option name="DEPLOY" value="true" />
+      <option name="DEPLOY_APK_FROM_BUNDLE" value="false" />
+      <option name="DEPLOY_AS_INSTANT" value="false" />
+      <option name="ARTIFACT_NAME" value="" />
+      <option name="PM_INSTALL_OPTIONS" value="" />
+      <option name="ALL_USERS" value="false" />
+      <option name="ALWAYS_INSTALL_WITH_PM" value="false" />
+      <option name="ALLOW_ASSUME_VERIFIED" value="false" />
+      <option name="CLEAR_APP_STORAGE" value="false" />
+      <option name="DYNAMIC_FEATURES_DISABLED_LIST" value="" />
+      <option name="ACTIVITY_EXTRA_FLAGS" value="" />
+      <option name="MODE" value="default_activity" />
+      <option name="RESTORE_ENABLED" value="false" />
+      <option name="RESTORE_FILE" value="" />
+      <option name="RESTORE_FRESH_INSTALL_ONLY" value="false" />
+      <option name="CLEAR_LOGCAT" value="false" />
+      <option name="SHOW_LOGCAT_AUTOMATICALLY" value="false" />
+      <option name="TARGET_SELECTION_MODE" value="DEVICE_AND_SNAPSHOT_COMBO_BOX" />
+      <option name="SELECTED_CLOUD_MATRIX_CONFIGURATION_ID" value="-1" />
+      <option name="SELECTED_CLOUD_MATRIX_PROJECT_ID" value="" />
+      <option name="DEBUGGER_TYPE" value="Auto" />
+      <Auto>
+        <option name="USE_JAVA_AWARE_DEBUGGER" value="false" />
+        <option name="SHOW_STATIC_VARS" value="true" />
+        <option name="WORKING_DIR" value="" />
+        <option name="TARGET_LOGGING_CHANNELS" value="lldb process:gdb-remote packets" />
+        <option name="SHOW_OPTIMIZED_WARNING" value="true" />
+        <option name="ATTACH_ON_WAIT_FOR_DEBUGGER" value="false" />
+        <option name="DEBUG_SANDBOX_SDK" value="false" />
+      </Auto>
+      <Hybrid>
+        <option name="USE_JAVA_AWARE_DEBUGGER" value="false" />
+        <option name="SHOW_STATIC_VARS" value="true" />
+        <option name="WORKING_DIR" value="" />
+        <option name="TARGET_LOGGING_CHANNELS" value="lldb process:gdb-remote packets" />
+        <option name="SHOW_OPTIMIZED_WARNING" value="true" />
+        <option name="ATTACH_ON_WAIT_FOR_DEBUGGER" value="false" />
+        <option name="DEBUG_SANDBOX_SDK" value="false" />
+      </Hybrid>
+      <Java>
+        <option name="ATTACH_ON_WAIT_FOR_DEBUGGER" value="false" />
+        <option name="DEBUG_SANDBOX_SDK" value="false" />
+      </Java>
+      <Native>
+        <option name="USE_JAVA_AWARE_DEBUGGER" value="false" />
+        <option name="SHOW_STATIC_VARS" value="true" />
+        <option name="WORKING_DIR" value="" />
+        <option name="TARGET_LOGGING_CHANNELS" value="lldb process:gdb-remote packets" />
+        <option name="SHOW_OPTIMIZED_WARNING" value="true" />
+        <option name="ATTACH_ON_WAIT_FOR_DEBUGGER" value="false" />
+        <option name="DEBUG_SANDBOX_SDK" value="false" />
+      </Native>
+      <Profilers>
+        <option name="ADVANCED_PROFILING_ENABLED" value="false" />
+        <option name="STARTUP_PROFILING_ENABLED" value="false" />
+        <option name="STARTUP_CPU_PROFILING_ENABLED" value="false" />
+        <option name="STARTUP_CPU_PROFILING_CONFIGURATION_NAME" value="Java/Kotlin Method Sample (legacy)" />
+        <option name="STARTUP_NATIVE_MEMORY_PROFILING_ENABLED" value="false" />
+        <option name="NATIVE_MEMORY_SAMPLE_RATE_BYTES" value="2048" />
+      </Profilers>
+      <option name="DEEP_LINK" value="" />
+      <option name="ACTIVITY" value="" />
+      <option name="ACTIVITY_CLASS" value="" />
+      <option name="SEARCH_ACTIVITY_IN_GLOBAL_SCOPE" value="false" />
+      <option name="SKIP_ACTIVITY_VALIDATION" value="false" />
+      <method v="2">
+        <option name="Android.Gradle.BeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="14fb0cad-d1cc-4507-88a3-6476f685e3c0" name="Changes" comment="" />
+      <created>1770360813388</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1770360813388</updated>
+    </task>
+    <task id="LOCAL-00001" summary="First Commit">
+      <option name="closed" value="true" />
+      <created>1770565315564</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1770565315564</updated>
+    </task>
+    <task id="LOCAL-00002" summary="Updated the Job status styling">
+      <option name="closed" value="true" />
+      <created>1770571489465</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1770571489465</updated>
+    </task>
+    <task id="LOCAL-00003" summary="Added google sheet bi-directional sync feature">
+      <option name="closed" value="true" />
+      <created>1770801007689</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1770801007689</updated>
+    </task>
+    <task id="LOCAL-00004" summary="Updated feature to support the delete job functionality">
+      <option name="closed" value="true" />
+      <created>1770802951357</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1770802951357</updated>
+    </task>
+    <task id="LOCAL-00005" summary="Code Changes to support Delete Functionality">
+      <option name="closed" value="true" />
+      <created>1770804681689</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1770804681689</updated>
+    </task>
+    <task id="LOCAL-00006" summary="Refactor job status handling and update color definitions and fixed the delete job functionality">
+      <option name="closed" value="true" />
+      <created>1771054745343</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1771054745343</updated>
+    </task>
+    <task id="LOCAL-00007" summary="Fixed the id issue">
+      <option name="closed" value="true" />
+      <created>1771084492439</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1771084492439</updated>
+    </task>
+    <task id="LOCAL-00008" summary="Feature: Add Job Title field to job entries&#10;&#10;This commit introduces a new &quot;Job Title&quot; field to the job entity.&#10;&#10;Key changes:&#10;- Updated the database schema to version 3, adding a `jobTitle` column to the `jobs` table and including a migration path.&#10;- Enhanced the job scraper to extract the job title along with the company name and description.&#10;- Modified the UI to display and edit the new job title field on the Job Details screen, job cards, and edit dialog.&#10;- Updated the Google Sheet integration to include the &quot;Job Title&quot; column, ensuring backward compatibility with older sheet formats.">
+      <option name="closed" value="true" />
+      <created>1771616082675</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1771616082675</updated>
+    </task>
+    <task id="LOCAL-00009" summary="feat: Add HTTP logging for network requests&#10;&#10;- Integrate the OkHttp logging interceptor to monitor network traffic.&#10;- Add detailed logging for job uploads to Google Sheets.&#10;- Include necessary dependencies for OkHttp logging.">
+      <option name="closed" value="true" />
+      <created>1771616886974</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1771616886974</updated>
+    </task>
+    <task id="LOCAL-00010" summary="Removed CSV import/export functionality">
+      <option name="closed" value="true" />
+      <created>1771657271435</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1771657271435</updated>
+    </task>
+    <task id="LOCAL-00011" summary="Refactored job filtering to display status counts">
+      <option name="closed" value="true" />
+      <created>1771657842461</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1771657842461</updated>
+    </task>
+    <task id="LOCAL-00012" summary="Refactored sync logic and updated sheet script&#10;&#10;Refactored the conflict resolution logic in the sync service to prioritize the most recently modified data based on the `lastModified` timestamp. If timestamps are equal, the local application data takes precedence.&#10;&#10;The Google Apps Script was also updated to ensure the `lastModified` value is correctly handled as a date object.">
+      <option name="closed" value="true" />
+      <created>1771695008696</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1771695008696</updated>
+    </task>
+    <task id="LOCAL-00013" summary="feat: Update Snackbar duration for delete action">
+      <option name="closed" value="true" />
+      <created>1771695824721</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1771695824721</updated>
+    </task>
+    <task id="LOCAL-00014" summary="Refactor HTML parsing and scroll to new jobs&#10;&#10;This commit introduces several improvements:&#10;&#10;-   Refactors the HTML parsing in `JobScraper` to better normalize line breaks and limit consecutive blank lines, improving the readability of scraped job descriptions.&#10;-   Adds unit tests for the new text normalization and HTML extraction logic.&#10;-   Updates the `JobListScreen` to automatically scroll to the top of the list when a new job is added, enhancing the user experience.">
+      <option name="closed" value="true" />
+      <created>1771698495040</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1771698495165</updated>
+    </task>
+    <task id="LOCAL-00015" summary="Updated code structure and documentation for better performance optimization practices">
+      <option name="closed" value="true" />
+      <created>1773898504570</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1773898504570</updated>
+    </task>
+    <task id="LOCAL-00016" summary="docs: Update AGENTS.md, Project_Architecture_Blueprint.md, and README.md for improved clarity and accuracy">
+      <option name="closed" value="true" />
+      <created>1773987434300</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1773987434300</updated>
+    </task>
+    <task id="LOCAL-00017" summary="feat: Update job entity to use String IDs and refactor related components for improved data handling">
+      <option name="closed" value="true" />
+      <created>1774339914786</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1774339914786</updated>
+    </task>
+    <task id="LOCAL-00018" summary="feat: Enhance cloud job synchronization and health reporting with failure tracking">
+      <option name="closed" value="true" />
+      <created>1774341910558</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1774341910558</updated>
+    </task>
+    <task id="LOCAL-00019" summary="Improve sync reliability and add manual synchronization features&#10;&#10;This commit introduces a more robust synchronization strategy and enhances the UI with manual sync controls and per-job sync status indicators.&#10;&#10;- **Enhanced Sync Logic**: Implements a clock-skew tolerant conflict resolution strategy in `SupabaseRepository`. It now uses a 2-minute window to compare local and remote changes, falling back to server-managed `updatedAt` timestamps to resolve ties.&#10;- **Manual Sync Support**: Adds the ability to trigger a manual synchronization from the job list. The UI now displays a progress bar and detailed status labels (attempted/acknowledged/failed) during manual sync operations.&#10;- **Sync Status Indicators**: Introduces `JobSyncDotState` and a `SyncDotIndicator` component to provide visual feedback on the synchronization state of individual jobs (Synced, Pending, or Never synced).&#10;- **Improved Work Tracking**: Updates `OutboxSyncWorker` to report granular progress via `WorkData`, allowing the ViewModel to observe and communicate sync results to the user.&#10;- **Refactored Loading State**: Replaces simple boolean flags with a reference-counting mechanism (`beginLoading`/`endLoading`) in `JobViewModel` to better manage overlapping background tasks.">
+      <option name="closed" value="true" />
+      <created>1774418406091</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1774418406091</updated>
+    </task>
+    <task id="LOCAL-00020" summary="chore: Update migration notes and project documentation for version 3.0.0">
+      <option name="closed" value="true" />
+      <created>1774419696055</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1774419696055</updated>
+    </task>
+    <task id="LOCAL-00021" summary="feat: Add Sync Dashboard and Pending Job Cards for enhanced job processing visibility">
+      <option name="closed" value="true" />
+      <created>1774425347378</created>
+      <option name="number" value="00021" />
+      <option name="presentableId" value="LOCAL-00021" />
+      <option name="project" value="LOCAL" />
+      <updated>1774425347378</updated>
+    </task>
+    <option name="localTasksCounter" value="22" />
+    <servers />
+  </component>
+  <component name="UnknownFeatures">
+    <option featureType="com.intellij.fileTypeFactory" implementationName="*.gs" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="First Commit" />
+    <MESSAGE value="Stable working app" />
+    <MESSAGE value="Updated the Job status styling" />
+    <MESSAGE value="Added google sheet bi-directional sync feature" />
+    <MESSAGE value="Updated feature to support the delete job functionality" />
+    <MESSAGE value="Code Changes to support Delete Functionality" />
+    <MESSAGE value="Added Delete Job functionality" />
+    <MESSAGE value="Refactor job status handling and update color definitions and fixed the delete job functionality" />
+    <MESSAGE value="Fixed the id issue" />
+    <MESSAGE value="Feature: Add Job Title field to job entries&#10;&#10;This commit introduces a new &quot;Job Title&quot; field to the job entity.&#10;&#10;Key changes:&#10;- Updated the database schema to version 3, adding a `jobTitle` column to the `jobs` table and including a migration path.&#10;- Enhanced the job scraper to extract the job title along with the company name and description.&#10;- Modified the UI to display and edit the new job title field on the Job Details screen, job cards, and edit dialog.&#10;- Updated the Google Sheet integration to include the &quot;Job Title&quot; column, ensuring backward compatibility with older sheet formats." />
+    <MESSAGE value="feat: Add HTTP logging for network requests&#10;&#10;- Integrate the OkHttp logging interceptor to monitor network traffic.&#10;- Add detailed logging for job uploads to Google Sheets.&#10;- Include necessary dependencies for OkHttp logging." />
+    <MESSAGE value="Removed CSV import/export functionality" />
+    <MESSAGE value="Refactored job filtering to display status counts" />
+    <MESSAGE value="Refactored sync logic and updated sheet script&#10;&#10;Refactored the conflict resolution logic in the sync service to prioritize the most recently modified data based on the `lastModified` timestamp. If timestamps are equal, the local application data takes precedence.&#10;&#10;The Google Apps Script was also updated to ensure the `lastModified` value is correctly handled as a date object." />
+    <MESSAGE value="feat: Update Snackbar duration for delete action" />
+    <MESSAGE value="Refactor HTML parsing and scroll to new jobs&#10;&#10;This commit introduces several improvements:&#10;&#10;-   Refactors the HTML parsing in `JobScraper` to better normalize line breaks and limit consecutive blank lines, improving the readability of scraped job descriptions.&#10;-   Adds unit tests for the new text normalization and HTML extraction logic.&#10;-   Updates the `JobListScreen` to automatically scroll to the top of the list when a new job is added, enhancing the user experience." />
+    <MESSAGE value="Updated code structure and documentation for better performance optimization practices" />
+    <MESSAGE value="docs: Update AGENTS.md, Project_Architecture_Blueprint.md, and README.md for improved clarity and accuracy" />
+    <MESSAGE value="feat: Update job entity to use String IDs and refactor related components for improved data handling" />
+    <MESSAGE value="feat: Enhance cloud job synchronization and health reporting with failure tracking" />
+    <MESSAGE value="Improve sync reliability and add manual synchronization features&#10;&#10;This commit introduces a more robust synchronization strategy and enhances the UI with manual sync controls and per-job sync status indicators.&#10;&#10;- **Enhanced Sync Logic**: Implements a clock-skew tolerant conflict resolution strategy in `SupabaseRepository`. It now uses a 2-minute window to compare local and remote changes, falling back to server-managed `updatedAt` timestamps to resolve ties.&#10;- **Manual Sync Support**: Adds the ability to trigger a manual synchronization from the job list. The UI now displays a progress bar and detailed status labels (attempted/acknowledged/failed) during manual sync operations.&#10;- **Sync Status Indicators**: Introduces `JobSyncDotState` and a `SyncDotIndicator` component to provide visual feedback on the synchronization state of individual jobs (Synced, Pending, or Never synced).&#10;- **Improved Work Tracking**: Updates `OutboxSyncWorker` to report granular progress via `WorkData`, allowing the ViewModel to observe and communicate sync results to the user.&#10;- **Refactored Loading State**: Replaces simple boolean flags with a reference-counting mechanism (`beginLoading`/`endLoading`) in `JobViewModel` to better manage overlapping background tasks." />
+    <MESSAGE value="chore: Update migration notes and project documentation for version 3.0.0" />
+    <MESSAGE value="feat: Add Sync Dashboard and Pending Job Cards for enhanced job processing visibility" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat: Add Sync Dashboard and Pending Job Cards for enhanced job processing visibility" />
+  </component>
+  <component name="github-copilot-workspace">
+    <instructionFileLocations>
+      <option value=".github/instructions" />
+    </instructionFileLocations>
+    <promptFileLocations>
+      <option value=".github/prompts" />
+    </promptFileLocations>
+  </component>
+  <component name="play_dynamic_filters_status">
+    <option name="appIdToCheckInfo">
+      <map>
+        <entry key="com.thewalkersoft.linkedin_job_tracker">
+          <value>
+            <CheckInfo lastCheckTimestamp="1771656622277" />
+          </value>
+        </entry>
+        <entry key="com.thewalkersoft.linkedin_job_tracker.test">
+          <value>
+            <CheckInfo lastCheckTimestamp="1771656622275" />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>
