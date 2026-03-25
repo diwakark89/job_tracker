@@ -258,19 +258,25 @@ Search for jobs across multiple job boards.
 
 | Parameter | Type | Default | Description |
 |---|---|---|---|
-| `search_term` | string | **required** | Job search keywords (e.g. `"software engineer"`) |
-| `location` | string | `null` | City, state, or country (e.g. `"San Francisco, CA"`) |
-| `site_name` | list | `["indeed","linkedin","zip_recruiter","google"]` | Job boards to search |
-| `results_wanted` | int | `15` | Number of results to return (1–1000) |
-| `job_type` | string | `null` | `fulltime`, `parttime`, `internship`, or `contract` |
-| `is_remote` | bool | `false` | Remote jobs only |
-| `hours_old` | int | `null` | Jobs posted within the last N hours |
-| `distance` | int | `50` | Search radius in miles |
-| `easy_apply` | bool | `false` | Easy apply listings only |
-| `country_indeed` | string | `"usa"` | Country for Indeed/Glassdoor searches |
-| `linkedin_fetch_description` | bool | `false` | Fetch full descriptions from LinkedIn (slower) |
-| `offset` | int | `0` | Results to skip (for pagination) |
-| `verbose` | int | `1` | Logging level: `0`=errors, `1`=warnings, `2`=all |
+| `search_term` | string | **required** | Main search keyword(s), for example `"python developer"`. |
+| `location` | string | `null` | Location filter (city/state/country/region). |
+| `site_name` | list[string] | `["indeed","linkedin","zip_recruiter","google"]` | Supported values: `linkedin`, `indeed`, `glassdoor`, `zip_recruiter`, `google`, `bayt`, `naukri`, `bdjobs`. |
+| `results_wanted` | int | `15` | Desired result count. Some providers cap internally (see provider table below). |
+| `job_type` | string | `null` | Supported values come from the internal `JobType` enum: `fulltime`, `parttime`, `internship`, `contract`, `temporary`, `other` and more aliases. |
+| `is_remote` | bool | `false` | Enables remote-only filtering where supported. |
+| `hours_old` | int | `null` | Filters by posting age where supported. |
+| `distance` | int | `50` | Radius in miles where provider supports location-radius queries. |
+| `easy_apply` | bool | `false` | Easy-apply filter where supported. |
+| `country_indeed` | string | `"usa"` | Country enum selector. Primarily used by Indeed and Glassdoor. |
+| `linkedin_fetch_description` | bool | `false` | Enables per-job detail fetch on LinkedIn and Naukri (slower). |
+| `offset` | int | `0` | Pagination offset. Behavior varies by provider and is also applied in the final combined DataFrame. |
+| `verbose` | int | `1` | Logging level: `0` errors, `1` warnings, `2` info. |
+
+Parameter notes:
+
+- `site_name` is validated against a fixed allow-list in the server. Any invalid value returns an error.
+- `country_indeed` accepts aliases like `usa`, `us`, `united states`. Use `get_supported_countries` for the complete list.
+- `linkedin_fetch_description=true` increases runtime because it triggers additional page/API fetches.
 
 ### `get_supported_countries`
 
@@ -300,27 +306,135 @@ Give me tips for finding jobs faster
 
 ## Supported Job Boards
 
-| `site_name` value | Platform | Best for |
-|---|---|---|
-| `linkedin` | LinkedIn | Professional roles; strict rate limits — keep `results_wanted` ≤ 20 |
-| `indeed` | Indeed | General search; most reliable and rate-limit-tolerant |
-| `glassdoor` | Glassdoor | Roles with salary and company review data |
-| `zip_recruiter` | ZipRecruiter | US and Canada listings |
-| `google` | Google Jobs | Aggregated results; use specific search terms |
-| `bayt` | Bayt | Middle East region |
-| `naukri` | Naukri | India; includes skills, experience range, company rating |
-| `bdjobs` | BDJobs | Bangladesh |
+| `site_name` value | Platform | Region coverage | Internal behavior notes |
+|---|---|---|---|
+| `linkedin` | LinkedIn | Global | Uses offset pagination with a practical hard stop near 1000 records. Supports remote, job type, hours-old, easy apply, distance, and optional full-description fetch. |
+| `indeed` | Indeed | Multi-country | Uses country-specific domain/API codes from `country_indeed`. Supports location+distance, hours-old, job type, remote, and easy apply (conditional query branches). |
+| `glassdoor` | Glassdoor | Multi-country | Uses Glassdoor domain mapped from `country_indeed`. Supports location/remote/hours-old/job_type/easy_apply. Results are capped internally at 900. |
+| `zip_recruiter` | ZipRecruiter | US/Canada focus | Cookie + token pagination flow. Does not use `country_indeed`. Limited advanced filtering compared to LinkedIn/Indeed. |
+| `google` | Google Jobs | Global aggregation | Query-built scraping with optional `google_search_term` override (internal API), plus support for remote/job_type/hours_old/location. Results capped internally at 900. |
+| `bayt` | Bayt | Middle East focus | HTML parsing flow. Uses search term and paging primarily; advanced filters are limited. |
+| `naukri` | Naukri | India focus | JSON API flow with extra fields (`skills`, `experience_range`, `company_rating`, etc.). Supports location/remote/hours_old and optional detailed description fetch. |
+| `bdjobs` | BDJobs | Bangladesh focus | HTML parser with region-specific endpoint. Primarily search term + paging oriented; advanced filters are limited. |
 
-### Platform-specific constraints
+### Provider Parameter Support Matrix
 
-**LinkedIn** — only one of the following per search:
-- `hours_old`
-- `easy_apply`
+Legend: `Yes` = directly supported, `Partial` = supported with caveat/provider-specific behavior, `No` = ignored or not implemented.
 
-**Indeed** — only one of the following per search:
-- `hours_old`
-- `job_type` + `is_remote` combined
-- `easy_apply`
+| Provider | `location` | `country_indeed` | `distance` | `is_remote` | `job_type` | `hours_old` | `easy_apply` | `offset` | `linkedin_fetch_description` |
+|---|---|---|---|---|---|---|---|---|---|
+| LinkedIn | Yes | No (fixed worldwide) | Yes | Yes | Yes | Yes | Yes | Yes | Yes |
+| Indeed | Yes | Yes | Yes | Yes | Yes | Partial (query branch rules) | Partial (query branch rules) | Yes | No |
+| Glassdoor | Yes | Yes | No | Yes | Yes | Yes | Yes | Yes | No |
+| ZipRecruiter | Yes | No (US/CA flow) | No | No | No | No | No | Partial | No |
+| Google Jobs | Yes | No | No | Yes | Yes | Yes | No | Yes | No |
+| Bayt | Partial | No (fixed worldwide) | No | No | No | No | No | Partial | No |
+| Naukri | Yes | No (India focus) | No | Yes | No | Yes | No | Yes | Yes |
+| BDJobs | Partial | No (Bangladesh focus) | No | No | No | No | No | Partial | No |
+
+### Provider Caveats and Limits
+
+- LinkedIn: stricter anti-bot behavior and backoff sensitivity than other sources.
+- Indeed: country selection is meaningful and should be set for non-US searches.
+- Glassdoor: internally caps requested results to 900.
+- Google Jobs: internally caps requested results to 900 and depends on cursor availability.
+- ZipRecruiter: strongest fit for US/Canada; global behavior is limited.
+- Bayt, Naukri, BDJobs: regional providers with fewer advanced filter guarantees.
+
+---
+
+## How to Add a New Provider
+
+This project uses a provider-per-module architecture under `jobspy_mcp_server/jobspy_scrapers/`.
+
+### 1. Create provider module
+
+Create a new folder:
+
+`jobspy_mcp_server/jobspy_scrapers/<new_provider>/`
+
+Recommended files:
+
+- `__init__.py` (required): scraper class implementation.
+- `constant.py` (optional but recommended): URLs, payload templates, selectors, headers.
+- `util.py` (optional): provider-specific parsing helpers.
+
+Implement a class inheriting the abstract `Scraper` and return `JobResponse` from `scrape(scraper_input: ScraperInput)`.
+
+### 2. Register provider enum
+
+Update `Site` in `jobspy_mcp_server/jobspy_scrapers/model.py` with the new string value used by `site_name`.
+
+Example:
+
+```python
+class Site(Enum):
+  # ... existing providers
+  MY_PROVIDER = "my_provider"
+```
+
+### 3. Add scraper mapping
+
+Update `jobspy_mcp_server/jobspy_scrapers/__init__.py`:
+
+- Add import for your new scraper class.
+- Add mapping in `SCRAPER_MAPPING`.
+
+Example:
+
+```python
+from jobspy_mcp_server.jobspy_scrapers.my_provider import MyProvider
+
+SCRAPER_MAPPING = {
+  # ... existing mappings
+  Site.MY_PROVIDER: MyProvider,
+}
+```
+
+### 4. Expose provider in MCP layer
+
+Update `jobspy_mcp_server/server.py`:
+
+- Add your provider to `valid_sites` in `scrape_jobs_tool` validation.
+- Add description in `get_supported_sites` output.
+- Optionally add a direct usage example in README (recommended).
+
+### 5. Follow data contract expectations
+
+Populate `JobPost` consistently:
+
+- Required quality fields: `title`, `job_url`, `company_name`, `location` where available.
+- Optional enrichment: `description`, compensation fields, `date_posted`, `job_type`, `is_remote`.
+- Normalize text output with existing converters where needed (markdown/plain).
+
+### 6. Handle errors and resilience
+
+- Catch provider-specific request/parse failures and return `JobResponse(jobs=[])` instead of crashing the whole run.
+- Use provider logger via existing `create_logger` utility.
+- Add controlled delays/backoff for anti-bot or rate-limited providers.
+
+### 7. Security checklist (required)
+
+- Validate and normalize any scraped URLs before returning them.
+- Avoid returning unsafe raw HTML unless intentionally required.
+- Prefer markdown/plain conversion for descriptions.
+- Do not hardcode secrets, API keys, or credentials in provider modules.
+
+### 8. Testing checklist
+
+Add or extend tests in `test/`:
+
+- `test_jobspy_mcp.py`: validate the new site name passes `scrape_jobs_tool` validation and appears in supported sites output.
+- Provider unit tests: parser robustness, empty-result handling, pagination behavior, and offset/result slicing.
+- `test_server.py`: ensure MCP server structure/tools remain intact.
+
+### 9. Common integration mistakes
+
+- Added enum but forgot `SCRAPER_MAPPING` import/entry.
+- Added scraper mapping but forgot server `valid_sites` allow-list.
+- Returned raw structures instead of `JobResponse`/`JobPost` schema.
+- Ignored offset/results slicing and produced unbounded result sets.
+- Added provider but forgot README supported-site documentation.
 
 ---
 
