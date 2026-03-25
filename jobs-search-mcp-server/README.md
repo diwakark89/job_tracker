@@ -117,6 +117,16 @@ docker run --rm -it jobspy-mcp-server
 
 The server communicates over **stdio** and is designed to be launched by an MCP client, not accessed via HTTP.
 
+### MCP Inspector (interactive debugging UI)
+
+To test the server locally without configuring a client, use the [MCP Inspector](https://github.com/modelcontextprotocol/inspector):
+
+```bash
+npx @modelcontextprotocol/inspector python -m jobspy_mcp_server
+```
+
+Then open `http://localhost:6274` in your browser to browse tools, invoke them with custom arguments, and inspect raw protocol messages.
+
 ---
 
 ## MCP Client Configuration

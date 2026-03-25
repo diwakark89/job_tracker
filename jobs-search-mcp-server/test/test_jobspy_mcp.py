@@ -254,5 +254,141 @@ def test_server_structure():
     assert hasattr(mcp, 'run')
 
 
+class TestInputGuardrails:
+    """Tests for ADR-001 input guardrails and bounded execution."""
+
+    @pytest.fixture
+    def mock_context(self):
+        ctx = Mock()
+        async def async_noop(*args, **kwargs):
+            pass
+        ctx.info = MagicMock(side_effect=async_noop)
+        ctx.warning = MagicMock(side_effect=async_noop)
+        ctx.error = MagicMock(side_effect=async_noop)
+        ctx.report_progress = MagicMock(side_effect=async_noop)
+        return ctx
+
+    # -- results_wanted clamping --
+
+    @patch('jobspy_mcp_server.server.scrape_jobs')
+    def test_results_wanted_clamped_to_min(self, mock_scrape, mock_context):
+        """results_wanted=0 is clamped to 1."""
+        mock_scrape.return_value = pd.DataFrame()
+        asyncio.run(scrape_jobs_tool(search_term="test", ctx=mock_context, results_wanted=0))
+        mock_scrape.assert_called_once()
+        assert mock_scrape.call_args.kwargs["results_wanted"] == 1
+
+    @patch('jobspy_mcp_server.server.scrape_jobs')
+    def test_results_wanted_clamped_to_max(self, mock_scrape, mock_context):
+        """results_wanted=50 is clamped to 15."""
+        mock_scrape.return_value = pd.DataFrame()
+        asyncio.run(scrape_jobs_tool(search_term="test", ctx=mock_context, results_wanted=50))
+        mock_scrape.assert_called_once()
+        assert mock_scrape.call_args.kwargs["results_wanted"] == 15
+
+    @patch('jobspy_mcp_server.server.scrape_jobs')
+    def test_results_wanted_within_range_unchanged(self, mock_scrape, mock_context):
+        """results_wanted=10 passes through unchanged."""
+        mock_scrape.return_value = pd.DataFrame()
+        asyncio.run(scrape_jobs_tool(search_term="test", ctx=mock_context, results_wanted=10))
+        assert mock_scrape.call_args.kwargs["results_wanted"] == 10
+
+    # -- hours_old clamping --
+
+    @patch('jobspy_mcp_server.server.scrape_jobs')
+    def test_hours_old_clamped_to_min(self, mock_scrape, mock_context):
+        """hours_old=0 is clamped to 1."""
+        mock_scrape.return_value = pd.DataFrame()
+        asyncio.run(scrape_jobs_tool(search_term="test", ctx=mock_context, hours_old=0))
+        assert mock_scrape.call_args.kwargs["hours_old"] == 1
+
+    @patch('jobspy_mcp_server.server.scrape_jobs')
+    def test_hours_old_clamped_to_max(self, mock_scrape, mock_context):
+        """hours_old=200 is clamped to 72."""
+        mock_scrape.return_value = pd.DataFrame()
+        asyncio.run(scrape_jobs_tool(search_term="test", ctx=mock_context, hours_old=200))
+        assert mock_scrape.call_args.kwargs["hours_old"] == 72
+
+    @patch('jobspy_mcp_server.server.scrape_jobs')
+    def test_hours_old_default_is_24(self, mock_scrape, mock_context):
+        """Default hours_old is 24 when not specified."""
+        mock_scrape.return_value = pd.DataFrame()
+        asyncio.run(scrape_jobs_tool(search_term="test", ctx=mock_context))
+        assert mock_scrape.call_args.kwargs["hours_old"] == 24
+
+    # -- distance clamping --
+
+    @patch('jobspy_mcp_server.server.scrape_jobs')
+    def test_distance_clamped_to_min(self, mock_scrape, mock_context):
+        """distance=0 is clamped to 1."""
+        mock_scrape.return_value = pd.DataFrame()
+        asyncio.run(scrape_jobs_tool(search_term="test", ctx=mock_context, distance=0))
+        assert mock_scrape.call_args.kwargs["distance"] == 1
+
+    @patch('jobspy_mcp_server.server.scrape_jobs')
+    def test_distance_clamped_to_max(self, mock_scrape, mock_context):
+        """distance=500 is clamped to 100."""
+        mock_scrape.return_value = pd.DataFrame()
+        asyncio.run(scrape_jobs_tool(search_term="test", ctx=mock_context, distance=500))
+        assert mock_scrape.call_args.kwargs["distance"] == 100
+
+    # -- offset clamping --
+
+    @patch('jobspy_mcp_server.server.scrape_jobs')
+    def test_offset_clamped_to_min(self, mock_scrape, mock_context):
+        """offset=-1 is clamped to 0."""
+        mock_scrape.return_value = pd.DataFrame()
+        asyncio.run(scrape_jobs_tool(search_term="test", ctx=mock_context, offset=-1))
+        assert mock_scrape.call_args.kwargs["offset"] == 0
+
+    @patch('jobspy_mcp_server.server.scrape_jobs')
+    def test_offset_clamped_to_max(self, mock_scrape, mock_context):
+        """offset=5000 is clamped to 1000."""
+        mock_scrape.return_value = pd.DataFrame()
+        asyncio.run(scrape_jobs_tool(search_term="test", ctx=mock_context, offset=5000))
+        assert mock_scrape.call_args.kwargs["offset"] == 1000
+
+    # -- site_name count validation --
+
+    def test_site_name_empty_rejected(self, mock_context):
+        """Empty site list is rejected."""
+        result = asyncio.run(scrape_jobs_tool(search_term="test", ctx=mock_context, site_name=[]))
+        assert "At least 1 site" in result
+
+    def test_site_name_too_many_rejected(self, mock_context):
+        """More than 3 sites is rejected."""
+        result = asyncio.run(
+            scrape_jobs_tool(
+                search_term="test",
+                ctx=mock_context,
+                site_name=["linkedin", "indeed", "google", "glassdoor"],
+            )
+        )
+        assert "Maximum 3 sites" in result
+
+    @patch('jobspy_mcp_server.server.scrape_jobs')
+    def test_site_name_three_allowed(self, mock_scrape, mock_context):
+        """Exactly 3 sites is allowed."""
+        mock_scrape.return_value = pd.DataFrame()
+        result = asyncio.run(
+            scrape_jobs_tool(
+                search_term="test",
+                ctx=mock_context,
+                site_name=["linkedin", "indeed", "google"],
+            )
+        )
+        assert "Maximum 3 sites" not in result
+        mock_scrape.assert_called_once()
+
+    # -- defaults pass without error --
+
+    @patch('jobspy_mcp_server.server.scrape_jobs')
+    def test_defaults_pass_validation(self, mock_scrape, mock_context):
+        """Calling with all defaults does not error."""
+        mock_scrape.return_value = pd.DataFrame()
+        result = asyncio.run(scrape_jobs_tool(search_term="test", ctx=mock_context))
+        assert "Error" not in result
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

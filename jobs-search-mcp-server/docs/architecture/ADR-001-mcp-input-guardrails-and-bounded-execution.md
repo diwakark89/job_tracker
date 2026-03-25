@@ -15,12 +15,14 @@ Without strict validation, requests can create excessive upstream traffic, long 
 Introduce a strict validation and normalization layer at MCP tool ingress:
 
 - Enforce allow-list for site names.
+- Limit site count to 1-3 per request (default: linkedin).
 - Clamp and validate numeric ranges:
-  - results_wanted: 1 to 100
-  - distance: 1 to 100
-  - offset: 0 to 1000
-  - hours_old: 1 to 720 when set
+  - results_wanted: 1 to 15 (default 10)
+  - distance: 1 to 100 (default 50)
+  - offset: 0 to 1000 (default 0)
+  - hours_old: 1 to 72 (default 24 — always enforced to prevent stale results)
 - Reject invalid values with deterministic error messages.
+- Log warnings when parameter values are clamped to safe ranges.
 - Set server-side execution budget (soft timeout) per request.
 
 ## Decision Drivers

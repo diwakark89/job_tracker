@@ -30,11 +30,11 @@ async def scrape_jobs_tool(
     search_term: str,
     ctx: Context,
     location: str | None = None,
-    site_name: list[str] = ["indeed", "linkedin", "zip_recruiter", "google"],
-    results_wanted: int = 15,
+    site_name: list[str] = ["linkedin"],
+    results_wanted: int = 10,
     job_type: str | None = None,
     is_remote: bool = False,
-    hours_old: int | None = None,
+    hours_old: int = 24,
     distance: int = 50,
     easy_apply: bool = False,
     country_indeed: str = "usa",
@@ -50,16 +50,16 @@ async def scrape_jobs_tool(
         search_term: Job search keywords (e.g., 'software engineer', 'data scientist')
         ctx: MCP context for progress reporting
         location: Job location (e.g., 'San Francisco, CA', 'New York', 'Remote')
-        site_name: Job boards to search from available options
-        results_wanted: Number of job results to retrieve (1-1000)
+        site_name: Job boards to search (1-3 sites, default: linkedin)
+        results_wanted: Number of job results to retrieve (1-15, default 10)
         job_type: Type of employment ('fulltime', 'parttime', 'internship', 'contract')
         is_remote: Filter for remote jobs only
-        hours_old: Filter jobs posted within the last N hours
-        distance: Search radius in miles from location (1-100)
+        hours_old: Only return jobs posted within the last N hours (1-72, default 24)
+        distance: Search radius in miles from location (1-100, default 50)
         easy_apply: Filter for jobs with easy apply options
         country_indeed: Country for Indeed/Glassdoor searches
         linkedin_fetch_description: Fetch full job descriptions from LinkedIn (slower)
-        offset: Number of results to skip (for pagination)
+        offset: Number of results to skip for pagination (0-1000)
         verbose: Logging verbosity (0=errors only, 1=warnings, 2=all logs)
     
     Returns:
@@ -76,7 +76,28 @@ async def scrape_jobs_tool(
         invalid_sites = [site for site in site_name if site not in valid_sites]
         if invalid_sites:
             return f"Error: Invalid site names: {invalid_sites}. Valid sites: {valid_sites}"
-        
+
+        # Validate site count (1-3 sites per request)
+        if len(site_name) == 0:
+            return "Error: At least 1 site must be specified."
+        if len(site_name) > 3:
+            return f"Error: Maximum 3 sites per request, got {len(site_name)}. Choose up to 3 from: {valid_sites}"
+
+        # Clamp numeric parameters to safe ranges (ADR-001)
+        original = {"results_wanted": results_wanted, "hours_old": hours_old, "distance": distance, "offset": offset}
+        results_wanted = min(max(results_wanted, 1), 15)
+        hours_old = min(max(hours_old, 1), 72)
+        distance = min(max(distance, 1), 100)
+        offset = min(max(offset, 0), 1000)
+        clamped = {
+            k: v for k, v in {
+                "results_wanted": results_wanted, "hours_old": hours_old,
+                "distance": distance, "offset": offset,
+            }.items() if v != original[k]
+        }
+        if clamped:
+            logger.warning("Clamped parameters to safe ranges: %s (original: %s)", clamped, {k: original[k] for k in clamped})
+
         # Report progress
         await ctx.report_progress(
             progress=0.1,
