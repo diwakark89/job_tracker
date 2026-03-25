@@ -21,6 +21,7 @@ import com.thewalkersoft.linkedin_job_tracker.data.displayName
 import com.thewalkersoft.linkedin_job_tracker.ui.components.EditJobDialog
 import com.thewalkersoft.linkedin_job_tracker.ui.components.JobCard
 import com.thewalkersoft.linkedin_job_tracker.ui.components.LoadingOverlay
+import com.thewalkersoft.linkedin_job_tracker.ui.model.JobSyncDotState
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -33,11 +34,15 @@ fun JobListScreen(
     isScraping: Boolean,
     message: String?,
     cloudHealth: String,
+    jobSyncStateById: Map<String, JobSyncDotState>,
+    isManualSyncRunning: Boolean,
+    manualSyncProgressLabel: String,
     onSearchQueryChange: (String) -> Unit,
     onStatusFilterChange: (JobStatus?) -> Unit,
     onStatusChange: (JobEntity, JobStatus) -> Unit,
     onDeleteJob: (String) -> Unit,
     onEditJob: (JobEntity, String, String, String, String) -> Unit,
+    onManualSyncClick: () -> Unit,
     modifier: Modifier = Modifier,
     onRestoreJob: (JobEntity) -> Unit = {},
     onMessageShown: () -> Unit = {},
@@ -176,11 +181,30 @@ fun JobListScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(
-                            text = cloudHealth,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = cloudHealth,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            if (isManualSyncRunning) {
+                                Spacer(modifier = Modifier.height(6.dp))
+                                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = manualSyncProgressLabel,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        FilledTonalButton(
+                            onClick = onManualSyncClick,
+                            enabled = !isManualSyncRunning
+                        ) {
+                            Text(if (isManualSyncRunning) "Syncing..." else "Sync")
+                        }
                         // Debug-only diagnostics reset trigger
                         if (BuildConfig.DEBUG) {
                             IconButton(onClick = onRequestDiagnosticsReset) {
@@ -229,6 +253,7 @@ fun JobListScreen(
                     items(jobs, key = { it.id }) { job ->
                         SwipeToDismissBox(
                             job = job,
+                            syncDotState = jobSyncStateById[job.id] ?: JobSyncDotState.RED,
                             onRequestDelete = { pendingDeleteJob = job },
                             onStatusChange = { status -> onStatusChange(job, status) },
                             onJobClick = { onJobClick(job.id) }
@@ -306,6 +331,7 @@ fun JobListScreen(
 @Composable
 fun SwipeToDismissBox(
     job: JobEntity,
+    syncDotState: JobSyncDotState,
     onRequestDelete: () -> Unit,
     onStatusChange: (JobStatus) -> Unit,
     modifier: Modifier = Modifier,
@@ -343,6 +369,7 @@ fun SwipeToDismissBox(
         JobCard(
             job = job,
             onStatusChange = onStatusChange,
+            syncDotState = syncDotState,
             onJobClick = onJobClick
         )
     }

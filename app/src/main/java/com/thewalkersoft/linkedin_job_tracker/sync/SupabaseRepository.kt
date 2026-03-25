@@ -5,10 +5,17 @@ import com.thewalkersoft.linkedin_job_tracker.client.SupabaseClient
 import com.thewalkersoft.linkedin_job_tracker.data.JobDao
 import com.thewalkersoft.linkedin_job_tracker.data.JobEntity
 import com.thewalkersoft.linkedin_job_tracker.service.SharedLinkRequest
+import java.time.Instant
 
 class SupabaseRepository(
     private val dao: JobDao
 ) {
+
+    /**
+     * Guardrail for cross-device clock skew. Outside this window, client lastModified wins.
+     * Within this window, we prefer comparing server-managed updatedAt when available.
+     */
+    private val clockSkewToleranceMillis = 2 * 60 * 1000L
 
     data class PullResult(
         val success: Boolean,
@@ -96,15 +103,15 @@ class SupabaseRepository(
                         inserted++
                     }
 
-                    remoteJob.lastModified > localJob.lastModified -> {
+                    shouldReplaceLocalWithRemote(localJob, remoteJob) -> {
                         // Keep the local primary key for the same business record (jobUrl).
                         dao.upsertJob(remoteJob.copy(id = localJob.id))
                         updatedFromRemote++
                     }
 
                     else -> {
-                        // Local record wins on ties and when local is newer.
-                        if (localJob.lastModified > remoteJob.lastModified) {
+                        // Local record wins on ties; only push when local is confidently newer.
+                        if (shouldPushLocalToRemote(localJob, remoteJob)) {
                             val response = SupabaseClient.instance.upsertJob(listOf(localJob))
                             if (response.isSuccessful) {
                                 uploaded++
@@ -156,6 +163,69 @@ class SupabaseRepository(
             Log.w("SupabaseRepository", "pullCloudJobsToRoom failed: ${it.message}")
             PullResult(success = false)
         }
+    }
+
+    private fun shouldReplaceLocalWithRemote(localJob: JobEntity, remoteJob: JobEntity): Boolean {
+        val delta = remoteJob.lastModified - localJob.lastModified
+        if (delta > clockSkewToleranceMillis) return true
+        if (delta < -clockSkewToleranceMillis) return false
+
+        Log.d(
+            "SupabaseRepository",
+            "[SYNC-SKEW] Skew-window conflict(jobUrl=${localJob.jobUrl}): remote-lastModified=${remoteJob.lastModified}, local-lastModified=${localJob.lastModified}, delta=$delta"
+        )
+
+        val remoteUpdatedAt = parseIsoTimestampToMillis(remoteJob.updatedAt)
+        val localUpdatedAt = parseIsoTimestampToMillis(localJob.updatedAt)
+        if (remoteUpdatedAt != null && localUpdatedAt != null && remoteUpdatedAt != localUpdatedAt) {
+            Log.d(
+                "SupabaseRepository",
+                "[SYNC-SKEW] Tie-break by updatedAt(jobUrl=${localJob.jobUrl}): remote-updatedAt=$remoteUpdatedAt, local-updatedAt=$localUpdatedAt, action=replace-local=${remoteUpdatedAt > localUpdatedAt}"
+            )
+            return remoteUpdatedAt > localUpdatedAt
+        }
+
+        Log.d(
+            "SupabaseRepository",
+            "[SYNC-SKEW] Tie-break fallback(jobUrl=${localJob.jobUrl}): insufficient server timestamps, action=keep-local"
+        )
+
+        // Preserve local when confidence is low (tie/near-tie and missing server timestamps).
+        return false
+    }
+
+    private fun shouldPushLocalToRemote(localJob: JobEntity, remoteJob: JobEntity): Boolean {
+        val delta = localJob.lastModified - remoteJob.lastModified
+        if (delta > clockSkewToleranceMillis) return true
+        if (delta < -clockSkewToleranceMillis) return false
+
+        Log.d(
+            "SupabaseRepository",
+            "[SYNC-SKEW] Skew-window upload check(jobUrl=${localJob.jobUrl}): local-lastModified=${localJob.lastModified}, remote-lastModified=${remoteJob.lastModified}, delta=$delta"
+        )
+
+        val remoteUpdatedAt = parseIsoTimestampToMillis(remoteJob.updatedAt)
+        val localUpdatedAt = parseIsoTimestampToMillis(localJob.updatedAt)
+        if (remoteUpdatedAt != null && localUpdatedAt != null && remoteUpdatedAt != localUpdatedAt) {
+            Log.d(
+                "SupabaseRepository",
+                "[SYNC-SKEW] Tie-break by updatedAt(jobUrl=${localJob.jobUrl}): local-updatedAt=$localUpdatedAt, remote-updatedAt=$remoteUpdatedAt, action=push-local=${localUpdatedAt > remoteUpdatedAt}"
+            )
+            return localUpdatedAt > remoteUpdatedAt
+        }
+
+        Log.d(
+            "SupabaseRepository",
+            "[SYNC-SKEW] Tie-break fallback(jobUrl=${localJob.jobUrl}): insufficient server timestamps, action=skip-push"
+        )
+
+        // Tie or uncertain ordering -> keep local as-is without forcing a push.
+        return false
+    }
+
+    private fun parseIsoTimestampToMillis(value: String?): Long? {
+        if (value.isNullOrBlank()) return null
+        return runCatching { Instant.parse(value).toEpochMilli() }.getOrNull()
     }
 
     enum class DeletePushResult {

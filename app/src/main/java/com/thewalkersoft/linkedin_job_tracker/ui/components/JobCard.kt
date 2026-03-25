@@ -1,6 +1,7 @@
 package com.thewalkersoft.linkedin_job_tracker.ui.components
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,7 +10,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -31,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import com.thewalkersoft.linkedin_job_tracker.data.JobEntity
 import com.thewalkersoft.linkedin_job_tracker.data.JobStatus
 import com.thewalkersoft.linkedin_job_tracker.data.displayName
+import com.thewalkersoft.linkedin_job_tracker.ui.model.JobSyncDotState
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -39,8 +43,9 @@ import java.util.Locale
 fun JobCard(
     job: JobEntity,
     onStatusChange: (JobStatus) -> Unit,
-    onJobClick: () -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    syncDotState: JobSyncDotState = JobSyncDotState.RED,
+    onJobClick: () -> Unit = {}
 ) {
     var showStatusMenu by remember { mutableStateOf(false) }
 
@@ -93,8 +98,9 @@ fun JobCard(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
+                SyncDotIndicator(syncDotState)
                 Box {
                     StatusChip(
                         status = job.status,
@@ -117,6 +123,28 @@ fun JobCard(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun SyncDotIndicator(state: JobSyncDotState) {
+    val (label, color) = when (state) {
+        JobSyncDotState.GREEN -> "Synced" to Color(0xFF2E7D32)
+        JobSyncDotState.YELLOW -> "Pending" to Color(0xFFF9A825)
+        JobSyncDotState.RED -> "Never synced" to Color(0xFFC62828)
+    }
+
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Box(
+            modifier = Modifier
+                .size(10.dp)
+                .background(color = color, shape = CircleShape)
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 

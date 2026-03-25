@@ -11,6 +11,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.thewalkersoft.linkedin_job_tracker.data.JobEntity
 import com.thewalkersoft.linkedin_job_tracker.data.JobStatus
+import com.thewalkersoft.linkedin_job_tracker.ui.model.JobSyncDotState
 import com.thewalkersoft.linkedin_job_tracker.ui.screens.JobDetailsMissingScreen
 import com.thewalkersoft.linkedin_job_tracker.ui.screens.JobDetailsScreen
 import com.thewalkersoft.linkedin_job_tracker.ui.screens.JobListScreen
@@ -26,10 +27,14 @@ fun AppNavigation(
     isScraping: Boolean,
     message: String?,
     cloudHealth: String,
+    jobSyncStateById: Map<String, JobSyncDotState>,
+    isManualSyncRunning: Boolean,
+    manualSyncProgressLabel: String,
     onSearchQueryChange: (String) -> Unit,
     onStatusFilterChange: (JobStatus?) -> Unit,
     onStatusChange: (JobEntity, JobStatus) -> Unit,
     onDeleteJob: (String) -> Unit,
+    onManualSyncClick: () -> Unit,
     onOpenUrl: (String) -> Unit,
     onEditJob: (JobEntity, String, String, String, String) -> Unit,
     onRestoreJob: (JobEntity) -> Unit,
@@ -58,11 +63,15 @@ fun AppNavigation(
                 isScraping = isScraping,
                 message = message,
                 cloudHealth = cloudHealth,
+                jobSyncStateById = jobSyncStateById,
+                isManualSyncRunning = isManualSyncRunning,
+                manualSyncProgressLabel = manualSyncProgressLabel,
                 onSearchQueryChange = onSearchQueryChange,
                 onStatusFilterChange = onStatusFilterChange,
                 onStatusChange = onStatusChange,
                 onDeleteJob = onDeleteJob,
                 onEditJob = onEditJob,
+                onManualSyncClick = onManualSyncClick,
                 onRestoreJob = onRestoreJob,
                 onMessageShown = onMessageShown,
                 diagnosticsStep = diagnosticsStep,
@@ -142,10 +151,14 @@ fun AppNavigationPreview() {
             isScraping = false,
             message = null,
             cloudHealth = "Offline",
+            jobSyncStateById = emptyMap(),
+            isManualSyncRunning = false,
+            manualSyncProgressLabel = "",
             onSearchQueryChange = { _ -> },
             onStatusFilterChange = { _ -> },
             onStatusChange = { _, _ -> },
             onDeleteJob = { _ -> },
+            onManualSyncClick = {},
             onOpenUrl = { _ -> },
             onEditJob = { _, _, _, _, _ -> },
             onRestoreJob = { _ -> },

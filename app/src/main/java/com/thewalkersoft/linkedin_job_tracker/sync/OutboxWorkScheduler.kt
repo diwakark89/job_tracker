@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit
 
 object OutboxWorkScheduler {
     const val WORK_NAME = "supabase-outbox-sync"
-    private const val IMMEDIATE_WORK_NAME = "supabase-outbox-sync-immediate"
+    const val IMMEDIATE_WORK_NAME = "supabase-outbox-sync-immediate"
 
     fun schedule(context: Context) {
         val request = PeriodicWorkRequestBuilder<OutboxSyncWorker>(60, TimeUnit.MINUTES)

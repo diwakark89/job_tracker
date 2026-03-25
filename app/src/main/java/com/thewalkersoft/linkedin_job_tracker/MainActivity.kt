@@ -43,6 +43,8 @@ class MainActivity : ComponentActivity() {
                 val message by viewModel.message.collectAsState()
                 val cloudHealth by viewModel.cloudHealth.collectAsStateWithLifecycle()
                 val diagnosticsStep by viewModel.diagnosticsStep.collectAsState()
+                val manualSyncUiState by viewModel.manualSyncUiState.collectAsState()
+                val jobSyncStateById by viewModel.jobSyncStateById.collectAsState()
 
                 AppNavigation(
                     navController = navController,
@@ -53,10 +55,14 @@ class MainActivity : ComponentActivity() {
                     isScraping = isScraping,
                     message = message,
                     cloudHealth = cloudHealth,
+                    jobSyncStateById = jobSyncStateById,
+                    isManualSyncRunning = manualSyncUiState.isRunning,
+                    manualSyncProgressLabel = "Syncing: ${manualSyncUiState.acknowledged}/${manualSyncUiState.attempted} queued, failed ${manualSyncUiState.failed}",
                     onSearchQueryChange = viewModel::onSearchQueryChange,
                     onStatusFilterChange = viewModel::onStatusFilterChange,
                     onStatusChange = { job, status -> viewModel.updateJobStatus(job, status) },
                     onDeleteJob = viewModel::deleteJob,
+                    onManualSyncClick = viewModel::runManualSync,
                     onOpenUrl = ::openUrl,
                     onEditJob = { job, companyName, jobUrl, jobTitle, jobDescription ->
                         viewModel.updateJob(job, companyName, jobUrl, jobTitle, jobDescription)
@@ -146,11 +152,17 @@ private fun JobListScreenPreview() {
             isScraping = false,
             message = null,
             cloudHealth = "Cloud: Offline",
+            jobSyncStateById = emptyMap(),
+            isManualSyncRunning = false,
+            manualSyncProgressLabel = "",
             onSearchQueryChange = {},
             onStatusFilterChange = {},
             onStatusChange = { _, _ -> },
             onDeleteJob = {},
             onEditJob = { _, _, _, _, _ -> },
+            onManualSyncClick = {},
+            onRestoreJob = {},
+            onMessageShown = {},
             modifier = Modifier.fillMaxSize()
         )
     }

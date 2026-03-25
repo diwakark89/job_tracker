@@ -21,6 +21,8 @@ import com.thewalkersoft.linkedin_job_tracker.sync.RealtimeConnectionState
 import com.thewalkersoft.linkedin_job_tracker.sync.RealtimeJobEvent
 import com.thewalkersoft.linkedin_job_tracker.sync.SupabaseRealtimeManager
 import com.thewalkersoft.linkedin_job_tracker.sync.SupabaseRepository
+import com.thewalkersoft.linkedin_job_tracker.sync.OutboxSyncWorker
+import com.thewalkersoft.linkedin_job_tracker.ui.model.JobSyncDotState
 import com.thewalkersoft.linkedin_job_tracker.util.PreferencesManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -58,6 +60,24 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
     /** 0 = hidden, 1 = step-1 dialog, 2 = step-2 dialog. Debug-only. */
     private val _diagnosticsStep = MutableStateFlow(0)
     val diagnosticsStep: StateFlow<Int> = _diagnosticsStep.asStateFlow()
+
+    data class ManualSyncUiState(
+        val isRunning: Boolean = false,
+        val attempted: Int = 0,
+        val acknowledged: Int = 0,
+        val failed: Int = 0,
+        val pulledUpdates: Int = 0
+    )
+
+    private val _manualSyncUiState = MutableStateFlow(ManualSyncUiState())
+    val manualSyncUiState: StateFlow<ManualSyncUiState> = _manualSyncUiState.asStateFlow()
+
+    private val _jobSyncStateById = MutableStateFlow<Map<String, JobSyncDotState>>(emptyMap())
+    val jobSyncStateById: StateFlow<Map<String, JobSyncDotState>> = _jobSyncStateById.asStateFlow()
+
+    private var loadingRefCount = 0
+    private var manualSyncRequested = false
+    private var handledManualWorkId: UUID? = null
 
     // All jobs without any filter (for calculating counts)
     val allJobs: StateFlow<List<JobEntity>> = dao.getAllJobs()
@@ -112,6 +132,7 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
             if (pullResult.success && pullResult.failedPush == 0) {
                 preferencesManager.saveLastSyncTimeMillis(System.currentTimeMillis())
             }
+            refreshPerJobSyncState()
             refreshCloudHealth()
         }
 
@@ -121,6 +142,13 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
         // 3. Mirror realtime connection state into cloudHealth banner
         viewModelScope.launch {
             realtimeManager.connectionState.collect { refreshCloudHealth() }
+        }
+
+        // 3b. Keep per-job sync indicator state current.
+        viewModelScope.launch {
+            allJobs.collect {
+                refreshPerJobSyncState()
+            }
         }
 
         // 4. Apply incoming job changes directly into Room
@@ -136,6 +164,74 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
                     val isActive = workInfos.any { it.state == WorkInfo.State.RUNNING }
                     if (!isActive && preferencesManager.isPendingDiagnosticsReset()) {
                         executeDiagnosticsResetNow()
+                    }
+                }
+        }
+
+        // 6. Observe one-shot sync work for manual progress and completion messaging.
+        viewModelScope.launch {
+            WorkManager.getInstance(application)
+                .getWorkInfosForUniqueWorkFlow(OutboxWorkScheduler.IMMEDIATE_WORK_NAME)
+                .collect { workInfos ->
+                    val workInfo = workInfos.firstOrNull() ?: return@collect
+
+                    val attempted = workInfo.progress.getInt(OutboxSyncWorker.KEY_ATTEMPTED, 0)
+                    val acknowledged = workInfo.progress.getInt(OutboxSyncWorker.KEY_ACKNOWLEDGED, 0)
+                    val failed = workInfo.progress.getInt(OutboxSyncWorker.KEY_FAILED, 0)
+                    val pulledUpdates = workInfo.progress.getInt(OutboxSyncWorker.KEY_PULLED_UPDATES, 0)
+
+                    if (manualSyncRequested) {
+                        _manualSyncUiState.value = _manualSyncUiState.value.copy(
+                            isRunning = workInfo.state == WorkInfo.State.ENQUEUED || workInfo.state == WorkInfo.State.RUNNING,
+                            attempted = attempted,
+                            acknowledged = acknowledged,
+                            failed = failed,
+                            pulledUpdates = pulledUpdates
+                        )
+                    }
+
+                    if (manualSyncRequested && workInfo.state.isFinished && handledManualWorkId != workInfo.id) {
+                        handledManualWorkId = workInfo.id
+
+                        val output = workInfo.outputData
+                        val outAttempted = output.getInt(OutboxSyncWorker.KEY_ATTEMPTED, attempted)
+                        val outAcknowledged = output.getInt(OutboxSyncWorker.KEY_ACKNOWLEDGED, acknowledged)
+                        val outFailed = output.getInt(OutboxSyncWorker.KEY_FAILED, failed)
+                        val outPulled = output.getInt(OutboxSyncWorker.KEY_PULLED_UPDATES, pulledUpdates)
+                        val totalSynced = outAcknowledged + outPulled
+
+                        _manualSyncUiState.value = ManualSyncUiState(
+                            isRunning = false,
+                            attempted = outAttempted,
+                            acknowledged = outAcknowledged,
+                            failed = outFailed,
+                            pulledUpdates = outPulled
+                        )
+
+                        _message.value = when (workInfo.state) {
+                            WorkInfo.State.SUCCEEDED -> {
+                                if (outFailed == 0) {
+                                    "Sync complete. Synced $totalSynced updates ($outAcknowledged outbox + $outPulled pull)."
+                                } else {
+                                    "Sync completed with issues: synced $totalSynced, failed $outFailed."
+                                }
+                            }
+
+                            WorkInfo.State.CANCELLED -> {
+                                "Sync cancelled."
+                            }
+
+                            WorkInfo.State.FAILED -> {
+                                "Sync failed. Please retry."
+                            }
+
+                            else -> null
+                        }
+
+                        manualSyncRequested = false
+                        endLoading()
+                        refreshPerJobSyncState()
+                        refreshCloudHealth()
                     }
                 }
         }
@@ -209,7 +305,7 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
 
     fun scrapeAndSaveJob(url: String) {
         viewModelScope.launch {
-            _isScraping.value = true
+            beginLoading()
             try {
                 // Check if job already exists
                 val existingJob = dao.getJobByUrl(url)
@@ -233,9 +329,19 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
             } catch (e: Exception) {
                 _message.value = "Failed to save job: ${e.message}"
             } finally {
-                _isScraping.value = false
+                endLoading()
             }
         }
+    }
+
+    fun runManualSync() {
+        if (_manualSyncUiState.value.isRunning) return
+        manualSyncRequested = true
+        handledManualWorkId = null
+        _manualSyncUiState.value = ManualSyncUiState(isRunning = true)
+        beginLoading()
+        OutboxWorkScheduler.kick(getApplication())
+        refreshCloudHealth()
     }
 
     fun updateJobStatus(job: JobEntity, newStatus: JobStatus) {
@@ -297,6 +403,7 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
             preferencesManager.saveLastSyncFailedPushCount(0)
             preferencesManager.saveLastSyncTimeMillis(System.currentTimeMillis())
         }
+        refreshPerJobSyncState()
         refreshCloudHealth()
     }
 
@@ -318,7 +425,36 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
             preferencesManager.saveLastSyncFailedPushCount(0)
             preferencesManager.saveLastSyncTimeMillis(System.currentTimeMillis())
         }
+        refreshPerJobSyncState()
         refreshCloudHealth()
+    }
+
+    private fun refreshPerJobSyncState() {
+        val lastSyncMillis = preferencesManager.getLastSyncTimeMillis()
+        val pendingByUrl = preferencesManager.getOutboxOperations()
+            .filter { it.type != OutboxOperationType.SHARED_LINK }
+            .map { it.jobUrl }
+            .toSet()
+
+        _jobSyncStateById.value = allJobs.value.associate { job ->
+            val state = when {
+                lastSyncMillis == null -> JobSyncDotState.RED
+                pendingByUrl.contains(job.jobUrl) -> JobSyncDotState.YELLOW
+                job.lastModified >= lastSyncMillis -> JobSyncDotState.YELLOW
+                else -> JobSyncDotState.GREEN
+            }
+            job.id to state
+        }
+    }
+
+    private fun beginLoading() {
+        loadingRefCount += 1
+        _isScraping.value = true
+    }
+
+    private fun endLoading() {
+        loadingRefCount = (loadingRefCount - 1).coerceAtLeast(0)
+        _isScraping.value = loadingRefCount > 0
     }
 
     private fun refreshCloudHealth() {

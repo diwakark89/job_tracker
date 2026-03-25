@@ -2,6 +2,7 @@ package com.thewalkersoft.linkedin_job_tracker.sync
 
 import android.content.Context
 import androidx.work.CoroutineWorker
+import androidx.work.workDataOf
 import androidx.work.WorkerParameters
 import com.thewalkersoft.linkedin_job_tracker.data.JobDatabase
 import com.thewalkersoft.linkedin_job_tracker.util.PreferencesManager
@@ -16,15 +17,23 @@ class OutboxSyncWorker(
         val preferences = PreferencesManager(applicationContext)
         val repository = SupabaseRepository(dao)
 
+        var attempted = 0
+        var acknowledged = 0
+        var failed = 0
+
         preferences.compactOutbox()
 
         val operations = preferences.getOutboxOperations()
         operations.forEach { operation ->
-            when (operation.type) {
+            attempted++
+            val acknowledgedThisOp = when (operation.type) {
                 OutboxOperationType.UPSERT -> {
                     val job = dao.getJobByUrl(operation.jobUrl)
                     if (job != null && repository.pushJob(job)) {
                         preferences.acknowledgeOperation(operation.key)
+                        true
+                    } else {
+                        false
                     }
                 }
 
@@ -33,6 +42,9 @@ class OutboxSyncWorker(
                     if (result == SupabaseRepository.DeletePushResult.SUCCESS || result == SupabaseRepository.DeletePushResult.NOT_FOUND) {
                         // Idempotent delete replay: missing remote rows are treated as terminal success.
                         preferences.acknowledgeOperation(operation.key)
+                        true
+                    } else {
+                        false
                     }
                 }
 
@@ -40,17 +52,51 @@ class OutboxSyncWorker(
                     val shared = operation.sharedUrl
                     if (!shared.isNullOrBlank() && repository.pushSharedLink(shared)) {
                         preferences.acknowledgeOperation(operation.key)
+                        true
+                    } else {
+                        false
                     }
                 }
             }
+
+            if (acknowledgedThisOp) {
+                acknowledged++
+            } else {
+                failed++
+            }
+
+            setProgress(
+                workDataOf(
+                    KEY_ATTEMPTED to attempted,
+                    KEY_ACKNOWLEDGED to acknowledged,
+                    KEY_FAILED to failed,
+                    KEY_PULLED_UPDATES to 0
+                )
+            )
         }
 
         val pullResult = repository.pullCloudJobsToRoom()
-        preferences.saveLastSyncFailedPushCount(pullResult.failedPush)
-        if (pullResult.success && pullResult.failedPush == 0) {
+        val pulledUpdates = pullResult.inserted + pullResult.updatedFromRemote + pullResult.uploaded
+        val totalFailed = failed + pullResult.failedPush
+        preferences.saveLastSyncFailedPushCount(totalFailed)
+        if (pullResult.success && totalFailed == 0) {
             preferences.saveLastSyncTimeMillis(System.currentTimeMillis())
         }
-        return Result.success()
+        return Result.success(
+            workDataOf(
+                KEY_ATTEMPTED to attempted,
+                KEY_ACKNOWLEDGED to acknowledged,
+                KEY_FAILED to totalFailed,
+                KEY_PULLED_UPDATES to pulledUpdates
+            )
+        )
+    }
+
+    companion object {
+        const val KEY_ATTEMPTED = "attempted"
+        const val KEY_ACKNOWLEDGED = "acknowledged"
+        const val KEY_FAILED = "failed"
+        const val KEY_PULLED_UPDATES = "pulled_updates"
     }
 }
 
