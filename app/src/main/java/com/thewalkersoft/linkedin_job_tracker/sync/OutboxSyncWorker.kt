@@ -17,6 +17,7 @@ class OutboxSyncWorker(
         val preferences = PreferencesManager(applicationContext)
         val repository = SupabaseRepository(dao)
 
+
         var attempted = 0
         var acknowledged = 0
         var failed = 0

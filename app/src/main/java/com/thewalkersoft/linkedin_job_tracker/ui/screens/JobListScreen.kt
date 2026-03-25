@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -21,6 +22,7 @@ import com.thewalkersoft.linkedin_job_tracker.data.displayName
 import com.thewalkersoft.linkedin_job_tracker.ui.components.EditJobDialog
 import com.thewalkersoft.linkedin_job_tracker.ui.components.JobCard
 import com.thewalkersoft.linkedin_job_tracker.ui.components.LoadingOverlay
+import com.thewalkersoft.linkedin_job_tracker.ui.components.PendingJobCard
 import com.thewalkersoft.linkedin_job_tracker.ui.model.JobSyncDotState
 import kotlinx.coroutines.launch
 
@@ -37,6 +39,7 @@ fun JobListScreen(
     jobSyncStateById: Map<String, JobSyncDotState>,
     isManualSyncRunning: Boolean,
     manualSyncProgressLabel: String,
+    pendingJobsByUrl: Map<String, Long> = emptyMap(),
     onSearchQueryChange: (String) -> Unit,
     onStatusFilterChange: (JobStatus?) -> Unit,
     onStatusChange: (JobEntity, JobStatus) -> Unit,
@@ -47,6 +50,7 @@ fun JobListScreen(
     onRestoreJob: (JobEntity) -> Unit = {},
     onMessageShown: () -> Unit = {},
     onJobClick: (String) -> Unit = {},
+    onSyncDashboardClick: () -> Unit = {},
     // Diagnostics – debug-only; default no-ops keep previews unchanged
     diagnosticsStep: Int = 0,
     onRequestDiagnosticsReset: () -> Unit = {},
@@ -181,29 +185,21 @@ fun JobListScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = cloudHealth,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            if (isManualSyncRunning) {
-                                Spacer(modifier = Modifier.height(6.dp))
-                                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = manualSyncProgressLabel,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.width(12.dp))
+                        // Sync button
                         FilledTonalButton(
                             onClick = onManualSyncClick,
                             enabled = !isManualSyncRunning
                         ) {
                             Text(if (isManualSyncRunning) "Syncing..." else "Sync")
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        // Info button - navigate to sync dashboard
+                        IconButton(onClick = onSyncDashboardClick) {
+                            Icon(
+                                imageVector = Icons.Default.Info,
+                                contentDescription = "Sync Info",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
                         }
                         // Debug-only diagnostics reset trigger
                         if (BuildConfig.DEBUG) {
@@ -250,6 +246,16 @@ fun JobListScreen(
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    // Pending jobs (sorted by timestamp, newest first)
+                    items(
+                        pendingJobsByUrl.toList().sortedByDescending { it.second }.size,
+                        key = { idx -> "pending_$idx" }
+                    ) { idx ->
+                        val (url, timestamp) = pendingJobsByUrl.toList().sortedByDescending { it.second }[idx]
+                        PendingJobCard(jobUrl = url, timestamp = timestamp)
+                    }
+                    
+                    // Regular jobs
                     items(jobs, key = { it.id }) { job ->
                         SwipeToDismissBox(
                             job = job,

@@ -45,6 +45,9 @@ class MainActivity : ComponentActivity() {
                 val diagnosticsStep by viewModel.diagnosticsStep.collectAsState()
                 val manualSyncUiState by viewModel.manualSyncUiState.collectAsState()
                 val jobSyncStateById by viewModel.jobSyncStateById.collectAsState()
+                val pendingJobsByUrl by viewModel.pendingJobsByUrl.collectAsState()
+                val queueStatus by viewModel.queueStatus.collectAsState()
+                val lastSyncTime by viewModel.lastSyncTime.collectAsState()
 
                 AppNavigation(
                     navController = navController,
@@ -58,6 +61,10 @@ class MainActivity : ComponentActivity() {
                     jobSyncStateById = jobSyncStateById,
                     isManualSyncRunning = manualSyncUiState.isRunning,
                     manualSyncProgressLabel = "Syncing: ${manualSyncUiState.acknowledged}/${manualSyncUiState.attempted} queued, failed ${manualSyncUiState.failed}",
+                    queueStatus = queueStatus,
+                    lastSyncTime = lastSyncTime,
+                    manualSyncUiState = manualSyncUiState,
+                    pendingJobsByUrl = pendingJobsByUrl,
                     onSearchQueryChange = viewModel::onSearchQueryChange,
                     onStatusFilterChange = viewModel::onStatusFilterChange,
                     onStatusChange = { job, status -> viewModel.updateJobStatus(job, status) },

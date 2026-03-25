@@ -15,7 +15,9 @@ import com.thewalkersoft.linkedin_job_tracker.ui.model.JobSyncDotState
 import com.thewalkersoft.linkedin_job_tracker.ui.screens.JobDetailsMissingScreen
 import com.thewalkersoft.linkedin_job_tracker.ui.screens.JobDetailsScreen
 import com.thewalkersoft.linkedin_job_tracker.ui.screens.JobListScreen
+import com.thewalkersoft.linkedin_job_tracker.ui.screens.SyncDashboardScreen
 import com.thewalkersoft.linkedin_job_tracker.ui.theme.LinkedIn_Job_TrackerTheme
+import com.thewalkersoft.linkedin_job_tracker.viewmodel.JobViewModel
 
 @Composable
 fun AppNavigation(
@@ -30,6 +32,10 @@ fun AppNavigation(
     jobSyncStateById: Map<String, JobSyncDotState>,
     isManualSyncRunning: Boolean,
     manualSyncProgressLabel: String,
+    queueStatus: Int = 0,
+    lastSyncTime: Long? = null,
+    manualSyncUiState: JobViewModel.ManualSyncUiState = JobViewModel.ManualSyncUiState(),
+    pendingJobsByUrl: Map<String, Long> = emptyMap(),
     onSearchQueryChange: (String) -> Unit,
     onStatusFilterChange: (JobStatus?) -> Unit,
     onStatusChange: (JobEntity, JobStatus) -> Unit,
@@ -66,6 +72,7 @@ fun AppNavigation(
                 jobSyncStateById = jobSyncStateById,
                 isManualSyncRunning = isManualSyncRunning,
                 manualSyncProgressLabel = manualSyncProgressLabel,
+                pendingJobsByUrl = pendingJobsByUrl,
                 onSearchQueryChange = onSearchQueryChange,
                 onStatusFilterChange = onStatusFilterChange,
                 onStatusChange = onStatusChange,
@@ -82,6 +89,9 @@ fun AppNavigation(
                 onDismissDiagnostics = onDismissDiagnostics,
                 onJobClick = { jobId ->
                     navController.navigate(Screen.JobDetails.createRoute(jobId))
+                },
+                onSyncDashboardClick = {
+                    navController.navigate(Screen.SyncDashboard.route)
                 }
             )
         }
@@ -116,6 +126,19 @@ fun AppNavigation(
                     }
                 )
             }
+        }
+
+        // Sync Dashboard Screen
+        composable(Screen.SyncDashboard.route) {
+            SyncDashboardScreen(
+                cloudHealth = cloudHealth,
+                queueStatus = queueStatus,
+                lastSyncTime = lastSyncTime,
+                isManualSyncRunning = isManualSyncRunning,
+                manualSyncUiState = manualSyncUiState,
+                onNavigateBack = { navController.navigateUp() },
+                onManualSyncClick = onManualSyncClick
+            )
         }
     }
 }

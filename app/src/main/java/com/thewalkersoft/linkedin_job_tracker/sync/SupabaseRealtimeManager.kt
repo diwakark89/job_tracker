@@ -108,6 +108,7 @@ class SupabaseRealtimeManager {
 
     private fun joinJobsChannel(ws: WebSocket) {
         val key = BuildConfig.SUPABASE_PUBLISHABLE_KEY
+
         val payload = """
             {
               "topic":"realtime:public:jobs",

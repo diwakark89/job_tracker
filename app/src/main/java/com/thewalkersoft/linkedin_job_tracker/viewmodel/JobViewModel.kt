@@ -2,6 +2,7 @@ package com.thewalkersoft.linkedin_job_tracker.viewmodel
 
 import android.app.Application
 import android.content.Intent
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -74,6 +75,18 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _jobSyncStateById = MutableStateFlow<Map<String, JobSyncDotState>>(emptyMap())
     val jobSyncStateById: StateFlow<Map<String, JobSyncDotState>> = _jobSyncStateById.asStateFlow()
+
+    // Pending jobs: URL -> (timestamp, isProcessing)
+    private val _pendingJobsByUrl = MutableStateFlow<Map<String, Long>>(emptyMap())
+    val pendingJobsByUrl: StateFlow<Map<String, Long>> = _pendingJobsByUrl.asStateFlow()
+
+    // Queue status: count of operations in outbox
+    private val _queueStatus = MutableStateFlow(0)
+    val queueStatus: StateFlow<Int> = _queueStatus.asStateFlow()
+
+    // Last sync time
+    private val _lastSyncTime = MutableStateFlow<Long?>(null)
+    val lastSyncTime: StateFlow<Long?> = _lastSyncTime.asStateFlow()
 
     private var loadingRefCount = 0
     private var manualSyncRequested = false
@@ -235,6 +248,46 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
                     }
                 }
         }
+
+        // 7. Monitor pending jobs: remove when corresponding job appears in allJobs
+        viewModelScope.launch {
+            combine(pendingJobsByUrl, allJobs) { pending, jobs ->
+                pending to jobs
+            }.collect { (pending, jobs) ->
+                val jobsByUrl = jobs.associateBy { it.jobUrl }
+                val stillPending = pending.filter { (url, _) ->
+                    jobsByUrl[url] == null
+                }
+                if (stillPending != pending) {
+                    _pendingJobsByUrl.value = stillPending
+                    // Notify user about newly scraped jobs
+                    val newlyScraped = pending.keys - stillPending.keys
+                    newlyScraped.forEach { url ->
+                        val job = jobsByUrl[url]
+                        if (job != null) {
+                            _message.value = "Job '${job.jobTitle}' from ${job.companyName} added!"
+                        }
+                    }
+                }
+            }
+        }
+
+        // 8. Update queue status periodically
+        viewModelScope.launch {
+            while (true) {
+                _queueStatus.value = preferencesManager.getOutboxOperations().size
+                _lastSyncTime.value = preferencesManager.getLastSyncTimeMillis()
+                kotlinx.coroutines.delay(2000) // Update every 2 seconds
+            }
+        }
+
+        // 9. Update cloud health periodically (includes queue info)
+        viewModelScope.launch {
+            while (true) {
+                refreshCloudHealth()
+                kotlinx.coroutines.delay(5000) // Update every 5 seconds
+            }
+        }
     }
 
     override fun onCleared() {
@@ -271,7 +324,15 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
         if (intent?.action == Intent.ACTION_SEND && intent.type == "text/plain") {
             val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT) ?: return
             viewModelScope.launch {
-                handleSharedLink(sharedText)
+                val linkedInJobUrl = extractLinkedInJobUrl(sharedText)
+                if (linkedInJobUrl == null) {
+                    _message.value = "No valid LinkedIn job link found in shared text."
+                    return@launch
+                }
+
+                handleSharedLink(linkedInJobUrl)
+                // Keep instant UX by scraping locally right away while cloud sync continues.
+                scrapeAndSaveJob(linkedInJobUrl)
             }
         }
     }
@@ -284,14 +345,17 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    private suspend fun handleSharedLink(rawSharedText: String) {
-        val pushed = repository.pushSharedLink(rawSharedText)
+    private suspend fun handleSharedLink(sharedJobUrl: String) {
+        // Add to pending jobs
+        _pendingJobsByUrl.value = _pendingJobsByUrl.value + (sharedJobUrl to System.currentTimeMillis())
+
+        val pushed = repository.pushSharedLink(sharedJobUrl)
         if (!pushed) {
             preferencesManager.enqueueOperation(
                 OutboxOperation(
                     type = OutboxOperationType.SHARED_LINK,
-                    jobUrl = rawSharedText,
-                    sharedUrl = rawSharedText
+                    jobUrl = sharedJobUrl,
+                    sharedUrl = sharedJobUrl
                 )
             )
             OutboxWorkScheduler.kick(getApplication())
@@ -300,27 +364,28 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
             preferencesManager.saveLastSyncTimeMillis(System.currentTimeMillis())
         }
         refreshCloudHealth()
-        _message.value = "Shared link queued for processing"
+        _message.value = "Processing LinkedIn job..."
     }
 
     fun scrapeAndSaveJob(url: String) {
         viewModelScope.launch {
+            val normalizedUrl = normalizeLinkedInJobUrl(url)
             beginLoading()
             try {
                 // Check if job already exists
-                val existingJob = dao.getJobByUrl(url)
+                val existingJob = dao.getJobByUrl(normalizedUrl)
                 if (existingJob != null) {
                     _message.value = "Job already saved! Current status: ${existingJob.status.displayName()}"
                     return@launch
                 }
 
                 // Scrape all job information at once
-                val jobInfo = JobScraper.scrapeJobInfo(url)
+                val jobInfo = JobScraper.scrapeJobInfo(normalizedUrl)
 
                 val job = JobEntity(
                     id = UUID.randomUUID().toString(),
                     companyName = jobInfo.companyName,
-                    jobUrl = url,
+                    jobUrl = normalizedUrl,
                     jobDescription = jobInfo.description,
                     jobTitle = jobInfo.jobTitle,
                     status = JobStatus.SAVED
@@ -530,7 +595,36 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
                 .any { it.state == WorkInfo.State.RUNNING }
         }.getOrDefault(false)
 
+
     companion object {
         private const val TAG = "JobViewModel"
+        private val URL_REGEX = Regex("""https?://[^\s]+""", RegexOption.IGNORE_CASE)
+    }
+
+    private fun extractLinkedInJobUrl(sharedText: String): String? {
+        val linkedInUrl = URL_REGEX.findAll(sharedText)
+            .map { it.value.trim().trimEnd('.', ',', ';', ')', ']', '"', '\'') }
+            .firstOrNull { candidate ->
+                candidate.contains("linkedin.com/jobs", ignoreCase = true)
+            }
+            ?: return null
+
+        return normalizeLinkedInJobUrl(linkedInUrl)
+    }
+
+    private fun normalizeLinkedInJobUrl(rawUrl: String): String {
+        val parsed = runCatching { Uri.parse(rawUrl) }.getOrNull() ?: return rawUrl
+        val host = parsed.host?.lowercase(Locale.US) ?: return rawUrl
+        if (!host.contains("linkedin.com")) return rawUrl
+
+        val normalizedHost = if (host.startsWith("www.")) host else "www.$host"
+        val normalizedPath = parsed.path?.trimEnd('/').orEmpty().ifBlank { "/" }
+
+        return Uri.Builder()
+            .scheme((parsed.scheme ?: "https").lowercase(Locale.US))
+            .encodedAuthority(normalizedHost)
+            .encodedPath(normalizedPath)
+            .build()
+            .toString()
     }
 }
