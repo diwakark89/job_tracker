@@ -4,12 +4,9 @@ Simple test script to verify the MCP server is working
 """
 import asyncio
 import json
+import os
 import subprocess
 import sys
-import os
-
-# Add the parent directory to the path so we can import the package
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 def test_mcp_server():
     """Pytest entrypoint for MCP server smoke test."""

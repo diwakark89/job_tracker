@@ -7,7 +7,7 @@ Built with FastMCP for modern MCP protocol compliance.
 """
 
 import logging
-from typing import Optional, List
+
 import pandas as pd
 
 # Modern MCP imports (2025)
@@ -29,12 +29,12 @@ mcp = FastMCP("JobSpy Job Search Server")
 async def scrape_jobs_tool(
     search_term: str,
     ctx: Context,
-    location: Optional[str] = None,
-    site_name: List[str] = ["indeed", "linkedin", "zip_recruiter", "google"],
+    location: str | None = None,
+    site_name: list[str] = ["indeed", "linkedin", "zip_recruiter", "google"],
     results_wanted: int = 15,
-    job_type: Optional[str] = None,
+    job_type: str | None = None,
     is_remote: bool = False,
-    hours_old: Optional[int] = None,
+    hours_old: int | None = None,
     distance: int = 50,
     easy_apply: bool = False,
     country_indeed: str = "usa",
@@ -188,7 +188,7 @@ async def scrape_jobs_tool(
         full_response = f"{results_summary}\n\n" + "\n\n---\n\n".join(job_listings)
         
         # Add summary statistics
-        full_response += f"\n\n---\n\n## 📊 Search Summary\n"
+        full_response += "\n\n---\n\n## 📊 Search Summary\n"
         full_response += f"- **Total jobs found:** {len(jobs_df)}\n"
         full_response += f"- **Sites searched:** {', '.join(site_name)}\n"
         full_response += f"- **Remote jobs:** {len(jobs_df[jobs_df.get('is_remote', False) == True])}\n"

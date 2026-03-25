@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Tuple
 
 import pandas as pd
 
@@ -25,8 +24,6 @@ from jobspy_mcp_server.jobspy_scrapers.util import (
 )
 from jobspy_mcp_server.jobspy_scrapers.ziprecruiter import ZipRecruiter
 
-
-# Update the SCRAPER_MAPPING dictionary in the scrape_jobs function
 
 def scrape_jobs(
     site_name: str | list[str] | Site | list[Site] | None = None,
@@ -63,7 +60,7 @@ def scrape_jobs(
         Site.GOOGLE: Google,
         Site.BAYT: BaytScraper,
         Site.NAUKRI: Naukri,
-        Site.BDJOBS: BDJobs,  # Add BDJobs to the scraper mapping
+        Site.BDJOBS: BDJobs,
     }
     set_logger_level(verbose)
     job_type = get_enum_from_value(job_type) if job_type else None
@@ -101,25 +98,21 @@ def scrape_jobs(
         hours_old=hours_old,
     )
 
-    def scrape_site(site: Site) -> Tuple[str, JobResponse]:
+    def scrape_site(site: Site) -> tuple[str, JobResponse]:
         scraper_class = SCRAPER_MAPPING[site]
         scraper = scraper_class(proxies=proxies, ca_cert=ca_cert, user_agent=user_agent)
         scraped_data: JobResponse = scraper.scrape(scraper_input)
+        display_names = {"Zip_recruiter": "ZipRecruiter", "Linkedin": "LinkedIn"}
         cap_name = site.value.capitalize()
-        site_name = "ZipRecruiter" if cap_name == "Zip_recruiter" else cap_name
-        site_name = "LinkedIn" if cap_name == "Linkedin" else cap_name
-        create_logger(site_name).info(f"finished scraping")
+        display_name = display_names.get(cap_name, cap_name)
+        create_logger(display_name).info("finished scraping")
         return site.value, scraped_data
 
     site_to_jobs_dict = {}
 
-    def worker(site):
-        site_val, scraped_info = scrape_site(site)
-        return site_val, scraped_info
-
     with ThreadPoolExecutor() as executor:
         future_to_site = {
-            executor.submit(worker, site): site for site in scraper_input.site_type
+            executor.submit(scrape_site, site): site for site in scraper_input.site_type
         }
 
         for future in as_completed(future_to_site):
@@ -130,8 +123,7 @@ def scrape_jobs(
 
     for site, job_response in site_to_jobs_dict.items():
         for job in job_response.jobs:
-            job_data = job.dict()
-            job_url = job_data["job_url"]
+            job_data = job.model_dump()
             job_data["site"] = site
             job_data["company"] = job_data["company_name"]
             job_data["job_type"] = (
@@ -185,15 +177,9 @@ def scrape_jobs(
                 else None
             )
 
-            #naukri-specific fields
             job_data["skills"] = (
                 ", ".join(job_data["skills"]) if job_data["skills"] else None
             )
-            job_data["experience_range"] = job_data.get("experience_range")
-            job_data["company_rating"] = job_data.get("company_rating")
-            job_data["company_reviews_count"] = job_data.get("company_reviews_count")
-            job_data["vacancy_count"] = job_data.get("vacancy_count")
-            job_data["work_from_home_type"] = job_data.get("work_from_home_type")
 
             job_df = pd.DataFrame([job_data])
             jobs_dfs.append(job_df)
@@ -219,9 +205,3 @@ def scrape_jobs(
         ).reset_index(drop=True)
     else:
         return pd.DataFrame()
-
-
-# Add BDJobs to __all__
-__all__ = [
-    "BDJobs",
-]

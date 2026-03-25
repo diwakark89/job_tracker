@@ -159,7 +159,7 @@ class Country(Enum):
             else:
                 return f"www.glassdoor.{self.value[2]}"
         else:
-            raise Exception(f"Glassdoor is not available for {self.name}")
+            raise ValueError(f"Glassdoor is not available for {self.name}")
 
     def get_glassdoor_url(self):
         return f"https://{self.glassdoor_domain_value}/"
@@ -242,7 +242,7 @@ class JobPost(BaseModel):
     company_name: str | None
     job_url: str
     job_url_direct: str | None = None
-    location: Optional[Location]
+    location: Optional[Location] = None
 
     description: str | None = None
     company_url: str | None = None
@@ -292,7 +292,7 @@ class Site(Enum):
     GOOGLE = "google"
     BAYT = "bayt"
     NAUKRI = "naukri"
-    BDJOBS = "bdjobs"  # Add this line
+    BDJOBS = "bdjobs"
 
 
 class SalarySource(Enum):
