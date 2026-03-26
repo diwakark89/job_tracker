@@ -41,7 +41,9 @@ class OutboxSyncWorker(
                 OutboxOperationType.DELETE -> {
                     val result = operation.jobId?.let { repository.pushDelete(it) }
                     if (result == SupabaseRepository.DeletePushResult.SUCCESS || result == SupabaseRepository.DeletePushResult.NOT_FOUND) {
-                        // Idempotent delete replay: missing remote rows are treated as terminal success.
+                        // Intent: keep backward compatibility for pre-tombstone queued DELETE operations.
+                        // Tradeoff: legacy hard-delete replay can remove rows that now prefer tombstone semantics.
+                        // Invariant: delete replay remains idempotent; NOT_FOUND is terminal success.
                         preferences.acknowledgeOperation(operation.key)
                         true
                     } else {

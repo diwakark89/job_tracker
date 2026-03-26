@@ -7,13 +7,13 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface JobDao {
-    @Query("SELECT * FROM jobs ORDER BY timestamp DESC")
+    @Query("SELECT * FROM jobs WHERE isDeleted = 0 ORDER BY timestamp DESC")
     fun getAllJobs(): Flow<List<JobEntity>>
 
-    @Query("SELECT * FROM jobs ORDER BY timestamp DESC")
+    @Query("SELECT * FROM jobs WHERE isDeleted = 0 ORDER BY timestamp DESC")
     suspend fun getAllJobsOnce(): List<JobEntity>
 
-    @Query("SELECT * FROM jobs WHERE companyName LIKE '%' || :query || '%' ORDER BY timestamp DESC")
+    @Query("SELECT * FROM jobs WHERE isDeleted = 0 AND companyName LIKE '%' || :query || '%' ORDER BY timestamp DESC")
     fun searchJobsByCompany(query: String): Flow<List<JobEntity>>
 
     @Upsert

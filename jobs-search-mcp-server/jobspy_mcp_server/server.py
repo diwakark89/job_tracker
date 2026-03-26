@@ -17,6 +17,24 @@ from mcp.server.fastmcp import FastMCP, Context
 # JobSpy imports
 from jobspy_mcp_server.jobspy_scrapers import scrape_jobs
 from jobspy_mcp_server.jobspy_scrapers.model import Country
+from jobspy_mcp_server.guardrails import (
+    DISTANCE_DEFAULT,
+    DISTANCE_MAX,
+    DISTANCE_MIN,
+    HOURS_OLD_DEFAULT,
+    HOURS_OLD_MAX,
+    HOURS_OLD_MIN,
+    OFFSET_DEFAULT,
+    OFFSET_MAX,
+    OFFSET_MIN,
+    RESULTS_WANTED_DEFAULT,
+    RESULTS_WANTED_MAX,
+    RESULTS_WANTED_MIN,
+    SITES_DEFAULT,
+    SITES_MAX,
+    SITES_MIN,
+    VALID_SITES,
+)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -31,16 +49,16 @@ async def scrape_jobs_tool(
     search_term: str,
     ctx: Context,
     location: str | None = None,
-    site_name: list[str] = ["linkedin"],
-    results_wanted: int = 10,
+    site_name: list[str] = SITES_DEFAULT,
+    results_wanted: int = RESULTS_WANTED_DEFAULT,
     job_type: str | None = None,
     is_remote: bool = False,
-    hours_old: int = 24,
-    distance: int = 50,
+    hours_old: int = HOURS_OLD_DEFAULT,
+    distance: int = DISTANCE_DEFAULT,
     easy_apply: bool = False,
     country_indeed: str = "usa",
     linkedin_fetch_description: bool = False,
-    offset: int = 0,
+    offset: int = OFFSET_DEFAULT,
     verbose: int = 1
 ) -> str:
     """
@@ -73,23 +91,22 @@ async def scrape_jobs_tool(
         await ctx.info(f"Searching for '{search_term}' jobs...")
         
         # Validate site names
-        valid_sites = ["linkedin", "indeed", "glassdoor", "zip_recruiter", "google", "bayt", "naukri", "stepstone", "xing"]
-        invalid_sites = [site for site in site_name if site not in valid_sites]
+        invalid_sites = [site for site in site_name if site not in VALID_SITES]
         if invalid_sites:
-            return f"Error: Invalid site names: {invalid_sites}. Valid sites: {valid_sites}"
+            return f"Error: Invalid site names: {invalid_sites}. Valid sites: {VALID_SITES}"
 
-        # Validate site count (1-3 sites per request)
-        if len(site_name) == 0:
-            return "Error: At least 1 site must be specified."
-        if len(site_name) > 3:
-            return f"Error: Maximum 3 sites per request, got {len(site_name)}. Choose up to 3 from: {valid_sites}"
+        # Validate site count
+        if len(site_name) < SITES_MIN:
+            return f"Error: At least {SITES_MIN} site must be specified."
+        if len(site_name) > SITES_MAX:
+            return f"Error: Maximum {SITES_MAX} sites per request, got {len(site_name)}. Choose up to {SITES_MAX} from: {VALID_SITES}"
 
         # Clamp numeric parameters to safe ranges (ADR-001)
         original = {"results_wanted": results_wanted, "hours_old": hours_old, "distance": distance, "offset": offset}
-        results_wanted = min(max(results_wanted, 1), 15)
-        hours_old = min(max(hours_old, 1), 72)
-        distance = min(max(distance, 1), 100)
-        offset = min(max(offset, 0), 1000)
+        results_wanted = min(max(results_wanted, RESULTS_WANTED_MIN), RESULTS_WANTED_MAX)
+        hours_old = min(max(hours_old, HOURS_OLD_MIN), HOURS_OLD_MAX)
+        distance = min(max(distance, DISTANCE_MIN), DISTANCE_MAX)
+        offset = min(max(offset, OFFSET_MIN), OFFSET_MAX)
         clamped = {
             k: v for k, v in {
                 "results_wanted": results_wanted, "hours_old": hours_old,

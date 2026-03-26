@@ -99,6 +99,9 @@ class SupabaseRepository(
                 val localJob = localJobsByUrl[remoteJob.jobUrl] ?: dao.getJobByUrl(remoteJob.jobUrl)
                 when {
                     localJob == null -> {
+                        // Intent: persist remote tombstones locally so future pulls/replays cannot resurrect rows.
+                        // Tradeoff: tombstoned rows remain stored in Room and are hidden via DAO filters.
+                        // Invariant: local absence of active rows must not imply "upload back" when remote is tombstoned.
                         dao.upsertJob(remoteJob)
                         inserted++
                     }
@@ -131,6 +134,9 @@ class SupabaseRepository(
             }
 
             // Upload jobs that exist only in local storage.
+            // Intent: upload only active jobs returned by DAO-visible list.
+            // Tradeoff: local tombstones are not part of this loop and must sync via delete/tombstone push paths.
+            // Invariant: pull reconciliation never re-uploads a locally deleted job as active.
             localJobs.forEach { localJob ->
                 if (!remoteJobsByUrl.containsKey(localJob.jobUrl)) {
                     val response = SupabaseClient.instance.upsertJob(listOf(localJob))
@@ -166,6 +172,13 @@ class SupabaseRepository(
     }
 
     private fun shouldReplaceLocalWithRemote(localJob: JobEntity, remoteJob: JobEntity): Boolean {
+        if (remoteJob.lastModified == localJob.lastModified) {
+            // Intent: prefer cloud when timestamps tie to keep cross-device convergence deterministic.
+            // Tradeoff: an unsynced local restore can be overwritten by the cloud row on exact tie.
+            // Invariant: tie outcome is always remote-wins, independent of payload shape.
+            return true
+        }
+
         val delta = remoteJob.lastModified - localJob.lastModified
         if (delta > clockSkewToleranceMillis) return true
         if (delta < -clockSkewToleranceMillis) return false
@@ -195,6 +208,13 @@ class SupabaseRepository(
     }
 
     private fun shouldPushLocalToRemote(localJob: JobEntity, remoteJob: JobEntity): Boolean {
+        if (localJob.lastModified == remoteJob.lastModified) {
+            // Intent: mirror the remote-wins tie policy by skipping local push on exact timestamp ties.
+            // Tradeoff: local tie updates are deferred until they become strictly newer.
+            // Invariant: tie handling never causes oscillation between push/pull in consecutive sync runs.
+            return false
+        }
+
         val delta = localJob.lastModified - remoteJob.lastModified
         if (delta > clockSkewToleranceMillis) return true
         if (delta < -clockSkewToleranceMillis) return false

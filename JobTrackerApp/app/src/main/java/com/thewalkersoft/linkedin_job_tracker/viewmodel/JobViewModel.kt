@@ -300,8 +300,22 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
     private suspend fun processRealtimeEvent(event: RealtimeJobEvent) {
         try {
             when (event) {
-                is RealtimeJobEvent.Insert -> parseJob(event.record)?.let { dao.upsertJob(it) }
-                is RealtimeJobEvent.Update -> parseJob(event.record)?.let { dao.upsertJob(it) }
+                is RealtimeJobEvent.Insert -> parseJob(event.record)?.let { job ->
+                    if (job.isDeleted) {
+                        // Intent: apply cloud tombstones immediately so deleted jobs disappear at once.
+                        // Tradeoff: local row is physically removed, so restore needs a later upsert from user/cloud.
+                        // Invariant: repeated tombstone events and later pulls must stay idempotent (no resurrection).
+                        dao.deleteJob(job.id)
+                    } else {
+                        dao.upsertJob(job)
+                    }
+                }
+                is RealtimeJobEvent.Update -> parseJob(event.record)?.let { job ->
+                    // Intent: a remote is_deleted=true update is treated as an immediate local delete operation.
+                    // Tradeoff: this is stricter than hide-only behavior and favors remote deletion consistency.
+                    // Invariant: delete-by-id is idempotent; replayed updates remain safe.
+                    if (job.isDeleted) dao.deleteJob(job.id) else dao.upsertJob(job)
+                }
                 is RealtimeJobEvent.Delete -> {
                     val id = event.oldRecord.get("id")?.asString
                     if (!id.isNullOrBlank()) dao.deleteJob(id)
@@ -441,14 +455,22 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
                 _message.value = "❌ Job not found"
                 return@launch
             }
-            dao.deleteJob(jobId)
-            queueOrPushDelete(job)
+            val tombstonedJob = job.copy(
+                isDeleted = true,
+                lastModified = System.currentTimeMillis()
+            )
+            dao.upsertJob(tombstonedJob)
+            queueOrPushUpsert(tombstonedJob)
         }
     }
 
     fun restoreJob(job: JobEntity) {
         viewModelScope.launch {
-            saveJob(job)
+            val restoredJob = job.copy(
+                isDeleted = false,
+                lastModified = System.currentTimeMillis()
+            )
+            saveJob(restoredJob)
         }
     }
 

@@ -3,6 +3,18 @@
 ## Overview
 The application now supports **bi-directional synchronization** between the local Android database and Google Sheets. This means data flows both ways, keeping both sources up-to-date with intelligent conflict resolution.
 
+## Decision Log
+- **Intent:** Use tombstone deletes (`is_deleted=true`) to prevent cross-device resurrection while keeping deletion history.
+  **Tradeoff:** Tombstoned rows remain in storage and are hidden from the app list.
+  **Invariant:** Repeated realtime tombstone updates and later pulls must remain idempotent and keep the job deleted.
+- **Intent:** Prefer cloud on exact `lastModified` ties for deterministic convergence.
+  **Tradeoff:** Unsynced local restore can be overwritten when timestamps are equal.
+  **Invariant:** Equal-timestamp conflicts always resolve to the cloud copy.
+- **Intent:** Keep permissive RLS only for development velocity.
+  **Tradeoff:** Current anon/authenticated allow-all policies are unsafe for production.
+  **Invariant:** Tightening policies is tracked as a separate hardening task only.
+  **TODO(v1.0-prod-hardening):** Replace permissive policies with owner-scoped predicates and service-role boundaries.
+
 ## Features
 
 ### 1. Two-Way Data Flow

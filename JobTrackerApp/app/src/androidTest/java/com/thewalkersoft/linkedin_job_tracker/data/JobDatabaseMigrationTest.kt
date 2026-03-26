@@ -112,6 +112,43 @@ class JobDatabaseMigrationTest {
         }
     }
 
+    @Test
+    fun migrate6To7_addsIsDeletedDefaultFalseAndPreservesRows() {
+        val dbName = testDbName("v6-v7-isDeleted")
+
+        helper.createDatabase(dbName, 6).apply {
+            insertJobV6(
+                db = this,
+                id = "soft-delete-seed",
+                companyName = "Seed Co",
+                jobUrl = "https://www.linkedin.com/jobs/view/seed",
+                jobDescription = "seed description",
+                jobTitle = "Android Engineer",
+                status = "Saved",
+                timestamp = 1234,
+                lastModified = 5678
+            )
+            close()
+        }
+
+        val migratedDb = helper.runMigrationsAndValidate(
+            dbName,
+            7,
+            true,
+            JobDatabase.MIGRATION_6_7
+        )
+
+        migratedDb.query(
+            "SELECT companyName, jobUrl, lastModified, isDeleted FROM jobs WHERE id = 'soft-delete-seed'"
+        ).use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals("Seed Co", cursor.getString(0))
+            assertEquals("https://www.linkedin.com/jobs/view/seed", cursor.getString(1))
+            assertEquals(5678L, cursor.getLong(2))
+            assertEquals(0, cursor.getInt(3))
+        }
+    }
+
     private fun seedVersion4Rows(db: SupportSQLiteDatabase) {
         insertJobV4(
             db = db,
@@ -163,6 +200,29 @@ class JobDatabaseMigrationTest {
     }
 
     private fun insertJobV4(
+        db: SupportSQLiteDatabase,
+        id: String,
+        companyName: String,
+        jobUrl: String,
+        jobDescription: String,
+        jobTitle: String,
+        status: String,
+        timestamp: Long,
+        lastModified: Long
+    ) {
+        db.execSQL(
+            """
+            INSERT INTO jobs (
+                id, companyName, jobUrl, jobDescription, jobTitle, status,
+                timestamp, lastModified, matchScore, language, prepNotes,
+                sourcePlatform, filterReason, createdAt, updatedAt
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, 'English', NULL, NULL, NULL, NULL, NULL)
+            """.trimIndent(),
+            arrayOf<Any>(id, companyName, jobUrl, jobDescription, jobTitle, status, timestamp, lastModified)
+        )
+    }
+
+    private fun insertJobV6(
         db: SupportSQLiteDatabase,
         id: String,
         companyName: String,

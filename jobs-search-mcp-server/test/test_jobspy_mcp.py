@@ -14,6 +14,19 @@ from jobspy_mcp_server.server import (
     get_supported_countries,
     get_supported_sites,
 )
+from jobspy_mcp_server.guardrails import (
+    DISTANCE_MAX,
+    DISTANCE_MIN,
+    HOURS_OLD_DEFAULT,
+    HOURS_OLD_MAX,
+    HOURS_OLD_MIN,
+    OFFSET_MAX,
+    OFFSET_MIN,
+    RESULTS_WANTED_DEFAULT,
+    RESULTS_WANTED_MAX,
+    RESULTS_WANTED_MIN,
+    SITES_MAX,
+)
 
 
 class TestJobSpyMCPServer:
@@ -276,81 +289,81 @@ class TestInputGuardrails:
 
     @patch('jobspy_mcp_server.server.scrape_jobs')
     def test_results_wanted_clamped_to_min(self, mock_scrape, mock_context):
-        """results_wanted=0 is clamped to 1."""
+        """results_wanted below minimum is clamped."""
         mock_scrape.return_value = pd.DataFrame()
         asyncio.run(scrape_jobs_tool(search_term="test", ctx=mock_context, results_wanted=0))
         mock_scrape.assert_called_once()
-        assert mock_scrape.call_args.kwargs["results_wanted"] == 1
+        assert mock_scrape.call_args.kwargs["results_wanted"] == RESULTS_WANTED_MIN
 
     @patch('jobspy_mcp_server.server.scrape_jobs')
     def test_results_wanted_clamped_to_max(self, mock_scrape, mock_context):
-        """results_wanted=50 is clamped to 15."""
+        """results_wanted above maximum is clamped."""
         mock_scrape.return_value = pd.DataFrame()
         asyncio.run(scrape_jobs_tool(search_term="test", ctx=mock_context, results_wanted=50))
         mock_scrape.assert_called_once()
-        assert mock_scrape.call_args.kwargs["results_wanted"] == 15
+        assert mock_scrape.call_args.kwargs["results_wanted"] == RESULTS_WANTED_MAX
 
     @patch('jobspy_mcp_server.server.scrape_jobs')
     def test_results_wanted_within_range_unchanged(self, mock_scrape, mock_context):
-        """results_wanted=10 passes through unchanged."""
+        """results_wanted within range passes through unchanged."""
         mock_scrape.return_value = pd.DataFrame()
-        asyncio.run(scrape_jobs_tool(search_term="test", ctx=mock_context, results_wanted=10))
-        assert mock_scrape.call_args.kwargs["results_wanted"] == 10
+        asyncio.run(scrape_jobs_tool(search_term="test", ctx=mock_context, results_wanted=RESULTS_WANTED_DEFAULT))
+        assert mock_scrape.call_args.kwargs["results_wanted"] == RESULTS_WANTED_DEFAULT
 
     # -- hours_old clamping --
 
     @patch('jobspy_mcp_server.server.scrape_jobs')
     def test_hours_old_clamped_to_min(self, mock_scrape, mock_context):
-        """hours_old=0 is clamped to 1."""
+        """hours_old below minimum is clamped."""
         mock_scrape.return_value = pd.DataFrame()
         asyncio.run(scrape_jobs_tool(search_term="test", ctx=mock_context, hours_old=0))
-        assert mock_scrape.call_args.kwargs["hours_old"] == 1
+        assert mock_scrape.call_args.kwargs["hours_old"] == HOURS_OLD_MIN
 
     @patch('jobspy_mcp_server.server.scrape_jobs')
     def test_hours_old_clamped_to_max(self, mock_scrape, mock_context):
-        """hours_old=200 is clamped to 72."""
+        """hours_old above maximum is clamped."""
         mock_scrape.return_value = pd.DataFrame()
         asyncio.run(scrape_jobs_tool(search_term="test", ctx=mock_context, hours_old=200))
-        assert mock_scrape.call_args.kwargs["hours_old"] == 72
+        assert mock_scrape.call_args.kwargs["hours_old"] == HOURS_OLD_MAX
 
     @patch('jobspy_mcp_server.server.scrape_jobs')
     def test_hours_old_default_is_24(self, mock_scrape, mock_context):
-        """Default hours_old is 24 when not specified."""
+        """Default hours_old when not specified."""
         mock_scrape.return_value = pd.DataFrame()
         asyncio.run(scrape_jobs_tool(search_term="test", ctx=mock_context))
-        assert mock_scrape.call_args.kwargs["hours_old"] == 24
+        assert mock_scrape.call_args.kwargs["hours_old"] == HOURS_OLD_DEFAULT
 
     # -- distance clamping --
 
     @patch('jobspy_mcp_server.server.scrape_jobs')
     def test_distance_clamped_to_min(self, mock_scrape, mock_context):
-        """distance=0 is clamped to 1."""
+        """distance below minimum is clamped."""
         mock_scrape.return_value = pd.DataFrame()
         asyncio.run(scrape_jobs_tool(search_term="test", ctx=mock_context, distance=0))
-        assert mock_scrape.call_args.kwargs["distance"] == 1
+        assert mock_scrape.call_args.kwargs["distance"] == DISTANCE_MIN
 
     @patch('jobspy_mcp_server.server.scrape_jobs')
     def test_distance_clamped_to_max(self, mock_scrape, mock_context):
-        """distance=500 is clamped to 100."""
+        """distance above maximum is clamped."""
         mock_scrape.return_value = pd.DataFrame()
         asyncio.run(scrape_jobs_tool(search_term="test", ctx=mock_context, distance=500))
-        assert mock_scrape.call_args.kwargs["distance"] == 100
+        assert mock_scrape.call_args.kwargs["distance"] == DISTANCE_MAX
 
     # -- offset clamping --
 
     @patch('jobspy_mcp_server.server.scrape_jobs')
     def test_offset_clamped_to_min(self, mock_scrape, mock_context):
-        """offset=-1 is clamped to 0."""
+        """offset below minimum is clamped."""
         mock_scrape.return_value = pd.DataFrame()
         asyncio.run(scrape_jobs_tool(search_term="test", ctx=mock_context, offset=-1))
-        assert mock_scrape.call_args.kwargs["offset"] == 0
+        assert mock_scrape.call_args.kwargs["offset"] == OFFSET_MIN
 
     @patch('jobspy_mcp_server.server.scrape_jobs')
     def test_offset_clamped_to_max(self, mock_scrape, mock_context):
-        """offset=5000 is clamped to 1000."""
+        """offset above maximum is clamped."""
         mock_scrape.return_value = pd.DataFrame()
         asyncio.run(scrape_jobs_tool(search_term="test", ctx=mock_context, offset=5000))
-        assert mock_scrape.call_args.kwargs["offset"] == 1000
+        assert mock_scrape.call_args.kwargs["offset"] == OFFSET_MAX
 
     # -- site_name count validation --
 
@@ -360,7 +373,7 @@ class TestInputGuardrails:
         assert "At least 1 site" in result
 
     def test_site_name_too_many_rejected(self, mock_context):
-        """More than 3 sites is rejected."""
+        """More than SITES_MAX sites is rejected."""
         result = asyncio.run(
             scrape_jobs_tool(
                 search_term="test",
@@ -368,7 +381,7 @@ class TestInputGuardrails:
                 site_name=["linkedin", "indeed", "google", "glassdoor"],
             )
         )
-        assert "Maximum 3 sites" in result
+        assert f"Maximum {SITES_MAX} sites" in result
 
     @patch('jobspy_mcp_server.server.scrape_jobs')
     def test_site_name_three_allowed(self, mock_scrape, mock_context):
@@ -381,7 +394,7 @@ class TestInputGuardrails:
                 site_name=["linkedin", "indeed", "google"],
             )
         )
-        assert "Maximum 3 sites" not in result
+        assert f"Maximum {SITES_MAX} sites" not in result
         mock_scrape.assert_called_once()
 
     # -- defaults pass without error --

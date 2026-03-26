@@ -1,5 +1,6 @@
 package com.thewalkersoft.linkedin_job_tracker.data
 
+import com.google.gson.annotations.SerializedName
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -18,6 +19,8 @@ data class JobEntity(
     val status: JobStatus = JobStatus.SAVED,
     val timestamp: Long = System.currentTimeMillis(),
     val lastModified: Long = System.currentTimeMillis(),
+    @SerializedName("is_deleted")
+    val isDeleted: Boolean = false,
     val matchScore: Int? = null,
     val language: String = "English",
     val prepNotes: String? = null,
