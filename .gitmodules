@@ -1,0 +1,6 @@
+[submodule "job_tracker_app"]
+	path = job_tracker_app
+	url = https://github.com/diwakark89/job_tracker_app.git
+[submodule "job_search_mcp_server"]
+	path = job_search_mcp_server
+	url = https://github.com/diwakark89/job_search_mcp_server.git
