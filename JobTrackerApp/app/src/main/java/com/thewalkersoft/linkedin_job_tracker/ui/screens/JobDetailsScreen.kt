@@ -9,17 +9,24 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.thewalkersoft.linkedin_job_tracker.data.JobEntity
 import com.thewalkersoft.linkedin_job_tracker.data.JobStatus
 import com.thewalkersoft.linkedin_job_tracker.data.displayName
+import com.thewalkersoft.linkedin_job_tracker.R
 import com.thewalkersoft.linkedin_job_tracker.ui.components.EditJobDialog
 import com.thewalkersoft.linkedin_job_tracker.ui.theme.*
 import java.text.SimpleDateFormat
@@ -43,12 +50,12 @@ fun JobDetailsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Job Details") },
+                title = { Text("Job Details", fontWeight = FontWeight.SemiBold) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(R.string.cd_back)
                         )
                     }
                 },
@@ -56,13 +63,13 @@ fun JobDetailsScreen(
                     IconButton(onClick = { showEditDialog = true }) {
                         Icon(
                             imageVector = Icons.Default.Edit,
-                            contentDescription = "Edit"
+                            contentDescription = stringResource(R.string.cd_edit)
                         )
                     }
                     IconButton(onClick = { showDeleteDialog = true }) {
                         Icon(
                             imageVector = Icons.Default.Delete,
-                            contentDescription = "Delete"
+                            contentDescription = stringResource(R.string.cd_delete)
                         )
                     }
                 }
@@ -74,125 +81,137 @@ fun JobDetailsScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp)
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Company Name
-            Text(
-                text = job.companyName,
-                style = MaterialTheme.typography.headlineMedium
-            )
+            Surface(
+                shape = RoundedCornerShape(22.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                tonalElevation = 1.dp
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = job.companyName,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
 
-            // Job Title
-            if (job.jobTitle.isNotBlank()) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = job.jobTitle,
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                    if (job.jobTitle.isNotBlank()) {
+                        Text(
+                            text = job.jobTitle,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+
+                    Text(
+                        text = formatTimestamp(job.timestamp),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Timestamp
-            Text(
-                text = formatTimestamp(job.timestamp),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Status Section
-            Text(
-                text = "Status",
-                style = MaterialTheme.typography.titleMedium
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Box {
-                StatusChipLarge(
-                    status = job.status,
-                    onClick = { showStatusMenu = true }
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = "Status",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                DropdownMenu(
-                    expanded = showStatusMenu,
-                    onDismissRequest = { showStatusMenu = false }
+
+                Box {
+                    StatusChipLarge(
+                        status = job.status,
+                        onClick = { showStatusMenu = true }
+                    )
+                    DropdownMenu(
+                        expanded = showStatusMenu,
+                        onDismissRequest = { showStatusMenu = false }
+                    ) {
+                        JobStatus.entries.forEach { status ->
+                            DropdownMenuItem(
+                                text = { Text(status.displayName()) },
+                                onClick = {
+                                    onStatusChange(status)
+                                    showStatusMenu = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = "LinkedIn URL",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onOpenUrl(job.jobUrl) },
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                 ) {
-                    JobStatus.entries.forEach { status ->
-                        DropdownMenuItem(
-                            text = { Text(status.displayName()) },
-                            onClick = {
-                                onStatusChange(status)
-                                showStatusMenu = false
-                            }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Open in Browser",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.weight(1f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Icon(
+                            imageVector = Icons.Default.Share,
+                            contentDescription = stringResource(R.string.cd_open_link),
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Job URL Section
-            Text(
-                text = "LinkedIn URL",
-                style = MaterialTheme.typography.titleMedium
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onOpenUrl(job.jobUrl) },
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = "Description",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
                 ) {
                     Text(
-                        text = "Open in Browser",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Icon(
-                        imageVector = Icons.Default.Share,
-                        contentDescription = "Open link",
-                        tint = MaterialTheme.colorScheme.primary
+                        text = job.jobDescription,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(16.dp)
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Job Description Section
-            Text(
-                text = "Description",
-                style = MaterialTheme.typography.titleMedium
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
-            ) {
-                Text(
-                    text = job.jobDescription,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(16.dp)
-                )
-            }
-
 
         }
     }
@@ -243,14 +262,15 @@ private fun StatusChipLarge(
     modifier: Modifier = Modifier
 ) {
     val containerColor = when (status) {
-        JobStatus.RESUME_REJECTED -> JobResumeRejectedRed.copy(alpha = 0.35f)
-        JobStatus.INTERVIEW_REJECTED -> JobInterviewRejectedRed.copy(alpha = 0.35f)
-        JobStatus.INTERVIEW -> JobInterviewingYellow.copy(alpha = 0.35f)
-        JobStatus.APPLIED -> JobAppliedBlue.copy(alpha = 0.35f)
-        JobStatus.SAVED -> JobSavedGray.copy(alpha = 0.35f)
+        JobStatus.RESUME_REJECTED -> JobResumeRejectedRed
+        JobStatus.INTERVIEW_REJECTED -> JobInterviewRejectedRed
+        JobStatus.INTERVIEW -> JobInterviewingYellow
+        JobStatus.APPLIED -> JobAppliedBlue
+        JobStatus.SAVED -> JobSavedGray
     }
 
     val contentColor = Color.White
+    val statusDescription = stringResource(R.string.sem_status_change, status.displayName())
 
     FilterChip(
         selected = true,
@@ -259,15 +279,21 @@ private fun StatusChipLarge(
             Text(
                 text = status.displayName(),
                 style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.widthIn(min = 100.dp)
             )
         },
         colors = FilterChipDefaults.filterChipColors(
             selectedContainerColor = containerColor,
+            containerColor = containerColor,
             selectedLabelColor = contentColor
         ),
-        modifier = modifier
+        border = null,
+        shape = RoundedCornerShape(20.dp),
+        modifier = modifier.semantics {
+            contentDescription = statusDescription
+        }
     )
 }
 
@@ -290,7 +316,7 @@ fun JobDetailsMissingScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(R.string.cd_back)
                         )
                     }
                 }

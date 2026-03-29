@@ -73,6 +73,8 @@ fun AppNavigation(
                 isManualSyncRunning = isManualSyncRunning,
                 manualSyncProgressLabel = manualSyncProgressLabel,
                 pendingJobsByUrl = pendingJobsByUrl,
+                queueStatus = queueStatus,
+                lastSyncTime = lastSyncTime,
                 onSearchQueryChange = onSearchQueryChange,
                 onStatusFilterChange = onStatusFilterChange,
                 onStatusChange = onStatusChange,
