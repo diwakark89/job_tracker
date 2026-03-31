@@ -111,7 +111,7 @@ private fun JobListScreenPreview() {
                 jobDescription = "Sample job description for preview.",
                 jobTitle = "Senior Software Engineer",
                 status = JobStatus.INTERVIEW,
-                timestamp = System.currentTimeMillis()
+                createdAt = System.currentTimeMillis()
             ),
             JobEntity(
                 id = "preview-2",
@@ -120,7 +120,7 @@ private fun JobListScreenPreview() {
                 jobDescription = "Another sample description for preview.",
                 jobTitle = "Full Stack Developer",
                 status = JobStatus.SAVED,
-                timestamp = System.currentTimeMillis() - 86_400_000
+                createdAt = System.currentTimeMillis() - 86_400_000
             ),
             JobEntity(
                 id = "preview-3",
@@ -129,7 +129,7 @@ private fun JobListScreenPreview() {
                 jobDescription = "Another sample description for preview.",
                 jobTitle = "Product Manager",
                 status = JobStatus.INTERVIEW,
-                timestamp = System.currentTimeMillis() - 86_400_000
+                createdAt = System.currentTimeMillis() - 86_400_000
             ),
             JobEntity(
                 id = "preview-4",
@@ -138,7 +138,7 @@ private fun JobListScreenPreview() {
                 jobDescription = "Another sample description for preview.",
                 jobTitle = "DevOps Engineer",
                 status = JobStatus.APPLIED,
-                timestamp = System.currentTimeMillis() - 86_400_000
+                createdAt = System.currentTimeMillis() - 86_400_000
             ),
             JobEntity(
                 id = "preview-5",
@@ -147,7 +147,7 @@ private fun JobListScreenPreview() {
                 jobDescription = "Another sample description for preview.",
                 jobTitle = "Data Scientist",
                 status = JobStatus.RESUME_REJECTED,
-                timestamp = System.currentTimeMillis() - 86_400_000
+                createdAt = System.currentTimeMillis() - 86_400_000
             )
         )
 

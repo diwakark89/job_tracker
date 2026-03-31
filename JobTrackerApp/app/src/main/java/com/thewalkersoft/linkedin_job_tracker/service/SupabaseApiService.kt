@@ -19,7 +19,8 @@ interface SupabaseApiService {
     @POST("rest/v1/jobs")
     suspend fun upsertJob(
         @Body jobs: List<JobEntity>,
-        @Query("on_conflict") onConflict: String = "jobUrl",
+        // Phase 1: conflict on canonical snake_case unique constraint (jobs_job_url_key)
+        @Query("on_conflict") onConflict: String = "job_url",
         @Header("Prefer") prefer: String = "resolution=merge-duplicates"
     ): Response<Unit>
 

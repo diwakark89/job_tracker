@@ -17,23 +17,27 @@ data class JobEntity(
     val jobDescription: String,
     val jobTitle: String = "",
     val status: JobStatus = JobStatus.SAVED,
-    val timestamp: Long = System.currentTimeMillis(),
-    val lastModified: Long = System.currentTimeMillis(),
+    /** Creation time in epoch millis. Serialised as "timestamp" for Phase 1 Supabase compat. */
+    @SerializedName("timestamp")
+    val createdAt: Long = System.currentTimeMillis(),
+    /** Last-modified time in epoch millis. Serialised as "lastModified" for Phase 1 Supabase compat. */
+    @SerializedName("lastModified")
+    val updatedAt: Long = System.currentTimeMillis(),
     @SerializedName("is_deleted")
     val isDeleted: Boolean = false,
     val matchScore: Int? = null,
     val language: String = "English",
     val prepNotes: String? = null,
     val sourcePlatform: String? = null,
-    val filterReason: String? = null,
-    val createdAt: String? = null,
-    val updatedAt: String? = null
+    val filterReason: String? = null
 )
 
 enum class JobStatus {
     SAVED,
     APPLIED,
     INTERVIEW,
+    INTERVIEWING,
+    OFFER,
     RESUME_REJECTED,
     INTERVIEW_REJECTED
 }
@@ -43,6 +47,8 @@ fun JobStatus.displayName(): String {
         JobStatus.SAVED -> "Saved"
         JobStatus.APPLIED -> "Applied"
         JobStatus.INTERVIEW -> "Interview"
+        JobStatus.INTERVIEWING -> "Interviewing"
+        JobStatus.OFFER -> "Offer"
         JobStatus.RESUME_REJECTED -> "Resume-Rejected"
         JobStatus.INTERVIEW_REJECTED -> "Interview-Rejected"
     }
@@ -52,8 +58,6 @@ fun parseJobStatus(value: String): JobStatus {
     val normalized = value.trim().uppercase().replace("-", "_").replace(" ", "_")
     return when (normalized) {
         "REJECTED" -> JobStatus.RESUME_REJECTED
-        "INTERVIEWING" -> JobStatus.INTERVIEW
-        "OFFER" -> JobStatus.INTERVIEW
         else -> runCatching { JobStatus.valueOf(normalized) }.getOrDefault(JobStatus.SAVED)
     }
 }

@@ -156,7 +156,7 @@ fun AppNavigationPreview() {
                 jobUrl = "https://careers.google.com",
                 jobDescription = "Software Engineer",
                 status = JobStatus.APPLIED,
-                timestamp = System.currentTimeMillis()
+                createdAt = System.currentTimeMillis()
             ),
             JobEntity(
                 id = "sample-2",
@@ -164,7 +164,7 @@ fun AppNavigationPreview() {
                 jobUrl = "https://www.metacareers.com/",
                 jobDescription = "Product Manager",
                 status = JobStatus.SAVED,
-                timestamp = System.currentTimeMillis()
+                createdAt = System.currentTimeMillis()
             )
         )
         AppNavigation(

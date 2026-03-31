@@ -41,7 +41,7 @@ class JobListScreenSwipeDismissTest {
             jobUrl = "https://www.linkedin.com/jobs/view/swipe-test",
             jobDescription = "Test description",
             status = JobStatus.SAVED,
-            timestamp = System.currentTimeMillis()
+            createdAt = System.currentTimeMillis()
         )
 
         composeRule.setContent {

@@ -112,7 +112,7 @@ fun JobCard(
 
             Spacer(modifier = Modifier.height(6.dp))
             Text(
-                text = formatTimestamp(job.timestamp),
+                text = formatTimestamp(job.createdAt),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -208,6 +208,8 @@ fun StatusChip(
         JobStatus.RESUME_REJECTED -> com.thewalkersoft.linkedin_job_tracker.ui.theme.JobResumeRejectedRed
         JobStatus.INTERVIEW_REJECTED -> com.thewalkersoft.linkedin_job_tracker.ui.theme.JobInterviewRejectedRed
         JobStatus.INTERVIEW -> com.thewalkersoft.linkedin_job_tracker.ui.theme.JobInterviewingYellow
+        JobStatus.INTERVIEWING -> com.thewalkersoft.linkedin_job_tracker.ui.theme.JobInterviewingYellow
+        JobStatus.OFFER -> com.thewalkersoft.linkedin_job_tracker.ui.theme.JobOfferGreen
         JobStatus.APPLIED -> com.thewalkersoft.linkedin_job_tracker.ui.theme.JobAppliedBlue
         JobStatus.SAVED -> com.thewalkersoft.linkedin_job_tracker.ui.theme.JobSavedGray
     }

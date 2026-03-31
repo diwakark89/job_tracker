@@ -427,7 +427,7 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val updatedJob = job.copy(
                 status = newStatus,
-                lastModified = System.currentTimeMillis()
+                updatedAt = System.currentTimeMillis()
             )
             dao.upsertJob(updatedJob)
             queueOrPushUpsert(updatedJob)
@@ -441,7 +441,7 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
                 jobUrl = jobUrl,
                 jobTitle = jobTitle,
                 jobDescription = jobDescription,
-                lastModified = System.currentTimeMillis()
+                updatedAt = System.currentTimeMillis()
             )
             dao.upsertJob(updatedJob)
             queueOrPushUpsert(updatedJob)
@@ -457,7 +457,7 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
             }
             val tombstonedJob = job.copy(
                 isDeleted = true,
-                lastModified = System.currentTimeMillis()
+                updatedAt = System.currentTimeMillis()
             )
             dao.upsertJob(tombstonedJob)
             queueOrPushUpsert(tombstonedJob)
@@ -468,7 +468,7 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val restoredJob = job.copy(
                 isDeleted = false,
-                lastModified = System.currentTimeMillis()
+                updatedAt = System.currentTimeMillis()
             )
             saveJob(restoredJob)
         }
@@ -478,12 +478,12 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
         val pushed = repository.pushJob(job)
         if (!pushed) {
             preferencesManager.enqueueOperation(
-                OutboxOperation(
-                    type = OutboxOperationType.UPSERT,
-                    jobId = job.id,
-                    jobUrl = job.jobUrl,
-                    lastModified = job.lastModified
-                )
+                    OutboxOperation(
+                        type = OutboxOperationType.UPSERT,
+                        jobId = job.id,
+                        jobUrl = job.jobUrl,
+                        lastModified = job.updatedAt
+                    )
             )
             OutboxWorkScheduler.kick(getApplication())
         } else {
@@ -527,7 +527,7 @@ class JobViewModel(application: Application) : AndroidViewModel(application) {
             val state = when {
                 lastSyncMillis == null -> JobSyncDotState.RED
                 pendingByUrl.contains(job.jobUrl) -> JobSyncDotState.YELLOW
-                job.lastModified >= lastSyncMillis -> JobSyncDotState.YELLOW
+                job.updatedAt >= lastSyncMillis -> JobSyncDotState.YELLOW
                 else -> JobSyncDotState.GREEN
             }
             job.id to state

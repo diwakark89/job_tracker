@@ -114,7 +114,7 @@ fun JobDetailsScreen(
                     }
 
                     Text(
-                        text = formatTimestamp(job.timestamp),
+                        text = formatTimestamp(job.createdAt),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -265,6 +265,8 @@ private fun StatusChipLarge(
         JobStatus.RESUME_REJECTED -> JobResumeRejectedRed
         JobStatus.INTERVIEW_REJECTED -> JobInterviewRejectedRed
         JobStatus.INTERVIEW -> JobInterviewingYellow
+        JobStatus.INTERVIEWING -> JobInterviewingYellow
+        JobStatus.OFFER -> JobOfferGreen
         JobStatus.APPLIED -> JobAppliedBlue
         JobStatus.SAVED -> JobSavedGray
     }
@@ -350,7 +352,7 @@ fun JobDetailsScreenPreview() {
                 jobUrl = "https://careers.google.com/jobs/results/12345/",
                 jobDescription = "Software Engineer position at Google. This is a sample job description. The ideal candidate will have experience with Kotlin, Jetpack Compose, and Android development. They should also be familiar with modern Android development practices and have a passion for creating beautiful and performant user interfaces.",
                 status = JobStatus.APPLIED,
-                timestamp = System.currentTimeMillis()
+                createdAt = System.currentTimeMillis()
             ),
             onNavigateBack = {},
             onStatusChange = {},

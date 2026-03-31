@@ -12,8 +12,8 @@ import com.thewalkersoft.linkedin_job_tracker.data.JobEntity
  * 1. Use Job URL as the unique identifier for matching
  * 2. Jobs only in app → Upload to sheet
  * 3. Jobs only in sheet → Download to app
- * 4. Jobs in both places → Resolve conflict using lastModified timestamp:
- *    - The version with the most recent lastModified timestamp always wins
+ * 4. Jobs in both places → Resolve conflict using updatedAt timestamp:
+ *    - The version with the most recent updatedAt timestamp always wins
  *    - If timestamps are equal, app data takes precedence
  * 5. Identical data → No action needed
  */
@@ -116,7 +116,7 @@ class SyncService(private val dao: JobDao) {
 
     /**
      * Resolve conflicts between local and sheet data
-     * RULE: The most recently modified version (based on lastModified timestamp) always wins
+     * RULE: The most recently modified version (based on updatedAt timestamp) always wins
      */
     private fun resolveConflict(localJob: JobEntity, sheetJob: JobEntity): ConflictResolution {
         // Check if all data is identical
@@ -127,13 +127,13 @@ class SyncService(private val dao: JobDao) {
             return ConflictResolution.NO_CHANGE
         }
 
-        // Use lastModified timestamp to determine which version is newer
-        val localModified = localJob.lastModified
-        val sheetModified = sheetJob.lastModified
+        // Use updatedAt timestamp to determine which version is newer
+        val localModified = localJob.updatedAt
+        val sheetModified = sheetJob.updatedAt
 
         Log.d("SyncService", "Conflict detected for ${localJob.companyName}:")
-        Log.d("SyncService", "  Local lastModified: $localModified")
-        Log.d("SyncService", "  Sheet lastModified: $sheetModified")
+        Log.d("SyncService", "  Local updatedAt: $localModified")
+        Log.d("SyncService", "  Sheet updatedAt: $sheetModified")
 
         return if (localModified > sheetModified) {
             // Local is newer → Update sheet with local data
