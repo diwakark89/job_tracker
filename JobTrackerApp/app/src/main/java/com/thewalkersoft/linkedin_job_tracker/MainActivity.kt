@@ -45,6 +45,8 @@ class MainActivity : ComponentActivity() {
                 val diagnosticsStep by viewModel.diagnosticsStep.collectAsState()
                 val manualSyncUiState by viewModel.manualSyncUiState.collectAsState()
                 val jobSyncStateById by viewModel.jobSyncStateById.collectAsState()
+                val jobSyncFailureById by viewModel.jobSyncFailureById.collectAsState()
+                val syncFailureJobs by viewModel.syncFailureJobs.collectAsState()
                 val pendingJobsByUrl by viewModel.pendingJobsByUrl.collectAsState()
                 val queueStatus by viewModel.queueStatus.collectAsState()
                 val lastSyncTime by viewModel.lastSyncTime.collectAsState()
@@ -59,6 +61,8 @@ class MainActivity : ComponentActivity() {
                     message = message,
                     cloudHealth = cloudHealth,
                     jobSyncStateById = jobSyncStateById,
+                    jobSyncFailureById = jobSyncFailureById,
+                    syncFailureJobs = syncFailureJobs,
                     isManualSyncRunning = manualSyncUiState.isRunning,
                     manualSyncProgressLabel = "Syncing: ${manualSyncUiState.acknowledged}/${manualSyncUiState.attempted} queued, failed ${manualSyncUiState.failed}",
                     queueStatus = queueStatus,

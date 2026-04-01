@@ -16,72 +16,186 @@ class SupabaseRepository(
      */
     private val clockSkewToleranceMillis = 2 * 60 * 1000L
 
+    data class PushResult(
+        val success: Boolean,
+        val failureReason: String? = null
+    )
+
+    data class DeletePushResult(
+        val state: State,
+        val failureReason: String? = null
+    ) {
+        enum class State {
+            SUCCESS,
+            NOT_FOUND,
+            RETRY
+        }
+
+        val acknowledged: Boolean
+            get() = state == State.SUCCESS || state == State.NOT_FOUND
+    }
+
     data class PullResult(
         val success: Boolean,
         val inserted: Int = 0,
         val updatedFromRemote: Int = 0,
         val uploaded: Int = 0,
         val preservedLocal: Int = 0,
-        val failedPush: Int = 0
+        val failedPush: Int = 0,
+        val failedJobReasons: Map<String, String> = emptyMap(),
+        val syncedJobUrls: Set<String> = emptySet(),
+        val summaryFailureReason: String? = null
     )
 
     fun isConfigured(): Boolean = SupabaseClient.isCloudConfigured()
 
-    suspend fun pushJob(job: JobEntity): Boolean {
-        if (!isConfigured()) return false
+    suspend fun pushJob(job: JobEntity): PushResult {
+        val redactedUrl = SyncDiagnostics.redactJobUrl(job.jobUrl)
+        if (!isConfigured()) {
+            val reason = SyncDiagnostics.buildFailureReason(
+                stage = "pushJob",
+                detail = "Supabase not configured"
+            )
+            Log.w(SyncDiagnostics.TAG, "[pushJob][skip] jobId=${job.id} jobUrl=$redactedUrl reason=$reason")
+            return PushResult(success = false, failureReason = reason)
+        }
+
+        Log.d(SyncDiagnostics.TAG, "[pushJob][start] jobId=${job.id} jobUrl=$redactedUrl updatedAt=${job.updatedAt}")
         return runCatching {
             val response = SupabaseClient.instance.upsertJob(listOf(job))
             if (!response.isSuccessful) {
                 val errorBody = response.errorBody()?.string().orEmpty()
-                Log.w(
-                    "SupabaseRepository",
-                    "pushJob failed: code=${response.code()} body=$errorBody"
+                val reason = SyncDiagnostics.buildFailureReason(
+                    stage = "pushJob",
+                    detail = errorBody.ifBlank { "Supabase upsert failed" },
+                    httpCode = response.code()
                 )
+                Log.w(
+                    SyncDiagnostics.TAG,
+                    "[pushJob][failure] jobId=${job.id} jobUrl=$redactedUrl code=${response.code()} reason=$reason"
+                )
+                PushResult(success = false, failureReason = reason)
+            } else {
+                Log.d(SyncDiagnostics.TAG, "[pushJob][success] jobId=${job.id} jobUrl=$redactedUrl")
+                PushResult(success = true)
             }
-            response.isSuccessful
         }.getOrElse {
-            Log.w("SupabaseRepository", "pushJob failed: ${it.message}")
-            false
+            val reason = SyncDiagnostics.buildFailureReason(
+                stage = "pushJob",
+                detail = SyncDiagnostics.throwableDetail(it)
+            )
+            Log.w(
+                SyncDiagnostics.TAG,
+                "[pushJob][exception] jobId=${job.id} jobUrl=$redactedUrl reason=$reason"
+            )
+            PushResult(success = false, failureReason = reason)
         }
     }
 
-    suspend fun pushDelete(jobId: String): DeletePushResult {
-        if (!isConfigured()) return DeletePushResult.RETRY
+    suspend fun pushDelete(jobId: String, jobUrl: String? = null): DeletePushResult {
+        val redactedUrl = SyncDiagnostics.redactJobUrl(jobUrl)
+        if (!isConfigured()) {
+            val reason = SyncDiagnostics.buildFailureReason(
+                stage = "pushDelete",
+                detail = "Supabase not configured"
+            )
+            Log.w(SyncDiagnostics.TAG, "[pushDelete][skip] jobId=$jobId jobUrl=$redactedUrl reason=$reason")
+            return DeletePushResult(DeletePushResult.State.RETRY, failureReason = reason)
+        }
+
+        Log.d(SyncDiagnostics.TAG, "[pushDelete][start] jobId=$jobId jobUrl=$redactedUrl")
         return runCatching {
             val response = SupabaseClient.instance.deleteJobById("eq.$jobId")
             when {
-                response.isSuccessful -> DeletePushResult.SUCCESS
-                response.code() == 404 -> DeletePushResult.NOT_FOUND
-                else -> DeletePushResult.RETRY
+                response.isSuccessful -> {
+                    Log.d(SyncDiagnostics.TAG, "[pushDelete][success] jobId=$jobId jobUrl=$redactedUrl")
+                    DeletePushResult(DeletePushResult.State.SUCCESS)
+                }
+                response.code() == 404 -> {
+                    Log.d(SyncDiagnostics.TAG, "[pushDelete][notFound] jobId=$jobId jobUrl=$redactedUrl treatedAsSynced=true")
+                    DeletePushResult(DeletePushResult.State.NOT_FOUND)
+                }
+                else -> {
+                    val errorBody = response.errorBody()?.string().orEmpty()
+                    val reason = SyncDiagnostics.buildFailureReason(
+                        stage = "pushDelete",
+                        detail = errorBody.ifBlank { "Supabase delete failed" },
+                        httpCode = response.code()
+                    )
+                    Log.w(
+                        SyncDiagnostics.TAG,
+                        "[pushDelete][failure] jobId=$jobId jobUrl=$redactedUrl code=${response.code()} reason=$reason"
+                    )
+                    DeletePushResult(DeletePushResult.State.RETRY, failureReason = reason)
+                }
             }
         }.getOrElse {
-            Log.w("SupabaseRepository", "pushDelete failed: ${it.message}")
-            DeletePushResult.RETRY
+            val reason = SyncDiagnostics.buildFailureReason(
+                stage = "pushDelete",
+                detail = SyncDiagnostics.throwableDetail(it)
+            )
+            Log.w(
+                SyncDiagnostics.TAG,
+                "[pushDelete][exception] jobId=$jobId jobUrl=$redactedUrl reason=$reason"
+            )
+            DeletePushResult(DeletePushResult.State.RETRY, failureReason = reason)
         }
     }
 
-    suspend fun pushSharedLink(rawUrl: String): Boolean {
-        if (!isConfigured()) return false
+    suspend fun pushSharedLink(rawUrl: String): PushResult {
+        val redactedUrl = SyncDiagnostics.redactJobUrl(rawUrl)
+        if (!isConfigured()) {
+            val reason = SyncDiagnostics.buildFailureReason(
+                stage = "pushSharedLink",
+                detail = "Supabase not configured"
+            )
+            Log.w(SyncDiagnostics.TAG, "[pushSharedLink][skip] jobUrl=$redactedUrl reason=$reason")
+            return PushResult(success = false, failureReason = reason)
+        }
+
+        Log.d(SyncDiagnostics.TAG, "[pushSharedLink][start] jobUrl=$redactedUrl")
         return runCatching {
             val response = SupabaseClient.instance.insertSharedLink(
                 listOf(SharedLinkRequest(url = rawUrl))
             )
             if (!response.isSuccessful) {
                 val errorBody = response.errorBody()?.string().orEmpty()
-                Log.w(
-                    "SupabaseRepository",
-                    "pushSharedLink failed: code=${response.code()} body=$errorBody"
+                val reason = SyncDiagnostics.buildFailureReason(
+                    stage = "pushSharedLink",
+                    detail = errorBody.ifBlank { "Supabase shared link insert failed" },
+                    httpCode = response.code()
                 )
+                Log.w(
+                    SyncDiagnostics.TAG,
+                    "[pushSharedLink][failure] jobUrl=$redactedUrl code=${response.code()} reason=$reason"
+                )
+                PushResult(success = false, failureReason = reason)
+            } else {
+                Log.d(SyncDiagnostics.TAG, "[pushSharedLink][success] jobUrl=$redactedUrl")
+                PushResult(success = true)
             }
-            response.isSuccessful
         }.getOrElse {
-            Log.w("SupabaseRepository", "pushSharedLink failed: ${it.message}")
-            false
+            val reason = SyncDiagnostics.buildFailureReason(
+                stage = "pushSharedLink",
+                detail = SyncDiagnostics.throwableDetail(it)
+            )
+            Log.w(
+                SyncDiagnostics.TAG,
+                "[pushSharedLink][exception] jobUrl=$redactedUrl reason=$reason"
+            )
+            PushResult(success = false, failureReason = reason)
         }
     }
 
     suspend fun pullCloudJobsToRoom(): PullResult {
-        if (!isConfigured()) return PullResult(success = false)
+        if (!isConfigured()) {
+            val reason = SyncDiagnostics.buildFailureReason(
+                stage = "pullCloudJobsToRoom",
+                detail = "Supabase not configured"
+            )
+            Log.w(SyncDiagnostics.TAG, "[pull][skip] reason=$reason")
+            return PullResult(success = false, summaryFailureReason = reason)
+        }
         return runCatching {
             val remoteJobs = SupabaseClient.instance.getJobs()
             val localJobs = dao.getAllJobsOnce()
@@ -93,6 +207,13 @@ class SupabaseRepository(
             var uploaded = 0
             var preservedLocal = 0
             var failedPush = 0
+            val failedJobReasons = mutableMapOf<String, String>()
+            val syncedJobUrls = mutableSetOf<String>()
+
+            Log.d(
+                SyncDiagnostics.TAG,
+                "[pull][start] localCount=${localJobs.size} remoteCount=${remoteJobs.size}"
+            )
 
             remoteJobs.forEach { remoteJob ->
                 val localJob = localJobsByUrl[remoteJob.jobUrl] ?: dao.getJobByUrl(remoteJob.jobUrl)
@@ -103,12 +224,22 @@ class SupabaseRepository(
                         // Invariant: local absence of active rows must not imply "upload back" when remote is tombstoned.
                         dao.upsertJob(remoteJob)
                         inserted++
+                        syncedJobUrls += remoteJob.jobUrl
+                        Log.d(
+                            SyncDiagnostics.TAG,
+                            "[pull][insertLocal] jobId=${remoteJob.id} jobUrl=${SyncDiagnostics.redactJobUrl(remoteJob.jobUrl)}"
+                        )
                     }
 
                     shouldReplaceLocalWithRemote(localJob, remoteJob) -> {
                         // Keep the local primary key for the same business record (jobUrl).
                         dao.upsertJob(remoteJob.copy(id = localJob.id))
                         updatedFromRemote++
+                        syncedJobUrls += localJob.jobUrl
+                        Log.d(
+                            SyncDiagnostics.TAG,
+                            "[pull][updateLocal] localJobId=${localJob.id} jobUrl=${SyncDiagnostics.redactJobUrl(localJob.jobUrl)} remoteUpdatedAt=${remoteJob.updatedAt}"
+                        )
                     }
 
                     else -> {
@@ -117,16 +248,31 @@ class SupabaseRepository(
                             val response = SupabaseClient.instance.upsertJob(listOf(localJob))
                             if (response.isSuccessful) {
                                 uploaded++
+                                syncedJobUrls += localJob.jobUrl
+                                Log.d(
+                                    SyncDiagnostics.TAG,
+                                    "[pull][uploadLocalWinner] jobId=${localJob.id} jobUrl=${SyncDiagnostics.redactJobUrl(localJob.jobUrl)}"
+                                )
                             } else {
                                 failedPush++
                                 val errorBody = response.errorBody()?.string().orEmpty()
+                                val reason = SyncDiagnostics.buildFailureReason(
+                                    stage = "pullUploadLocalWinner",
+                                    detail = errorBody.ifBlank { "Supabase upsert failed" },
+                                    httpCode = response.code()
+                                )
+                                failedJobReasons[localJob.jobUrl] = reason
                                 Log.w(
-                                    "SupabaseRepository",
-                                    "pullCloudJobsToRoom push(local newer) failed: code=${response.code()} body=$errorBody"
+                                    SyncDiagnostics.TAG,
+                                    "[pull][uploadLocalWinnerFailed] jobId=${localJob.id} jobUrl=${SyncDiagnostics.redactJobUrl(localJob.jobUrl)} code=${response.code()} reason=$reason"
                                 )
                             }
                         } else {
                             preservedLocal++
+                            Log.d(
+                                SyncDiagnostics.TAG,
+                                "[pull][preserveLocal] jobId=${localJob.id} jobUrl=${SyncDiagnostics.redactJobUrl(localJob.jobUrl)} localUpdatedAt=${localJob.updatedAt} remoteUpdatedAt=${remoteJob.updatedAt}"
+                            )
                         }
                     }
                 }
@@ -141,20 +287,31 @@ class SupabaseRepository(
                     val response = SupabaseClient.instance.upsertJob(listOf(localJob))
                     if (response.isSuccessful) {
                         uploaded++
+                        syncedJobUrls += localJob.jobUrl
+                        Log.d(
+                            SyncDiagnostics.TAG,
+                            "[pull][uploadLocalMissingRemote] jobId=${localJob.id} jobUrl=${SyncDiagnostics.redactJobUrl(localJob.jobUrl)}"
+                        )
                     } else {
                         failedPush++
                         val errorBody = response.errorBody()?.string().orEmpty()
+                        val reason = SyncDiagnostics.buildFailureReason(
+                            stage = "pullUploadLocalMissingRemote",
+                            detail = errorBody.ifBlank { "Supabase upsert failed" },
+                            httpCode = response.code()
+                        )
+                        failedJobReasons[localJob.jobUrl] = reason
                         Log.w(
-                            "SupabaseRepository",
-                            "pullCloudJobsToRoom push(local missing remotely) failed: code=${response.code()} body=$errorBody"
+                            SyncDiagnostics.TAG,
+                            "[pull][uploadLocalMissingRemoteFailed] jobId=${localJob.id} jobUrl=${SyncDiagnostics.redactJobUrl(localJob.jobUrl)} code=${response.code()} reason=$reason"
                         )
                     }
                 }
             }
 
             Log.d(
-                "SupabaseRepository",
-                "pullCloudJobsToRoom: inserted=$inserted updatedFromRemote=$updatedFromRemote uploaded=$uploaded preservedLocal=$preservedLocal failedPush=$failedPush"
+                SyncDiagnostics.TAG,
+                "[pull][complete] inserted=$inserted updatedFromRemote=$updatedFromRemote uploaded=$uploaded preservedLocal=$preservedLocal failedPush=$failedPush"
             )
             PullResult(
                 success = true,
@@ -162,11 +319,17 @@ class SupabaseRepository(
                 updatedFromRemote = updatedFromRemote,
                 uploaded = uploaded,
                 preservedLocal = preservedLocal,
-                failedPush = failedPush
+                failedPush = failedPush,
+                failedJobReasons = failedJobReasons,
+                syncedJobUrls = syncedJobUrls
             )
         }.getOrElse {
-            Log.w("SupabaseRepository", "pullCloudJobsToRoom failed: ${it.message}")
-            PullResult(success = false)
+            val reason = SyncDiagnostics.buildFailureReason(
+                stage = "pullCloudJobsToRoom",
+                detail = SyncDiagnostics.throwableDetail(it)
+            )
+            Log.w(SyncDiagnostics.TAG, "[pull][exception] reason=$reason")
+            PullResult(success = false, summaryFailureReason = reason)
         }
     }
 
@@ -183,8 +346,8 @@ class SupabaseRepository(
         if (delta < -clockSkewToleranceMillis) return false
 
         Log.d(
-            "SupabaseRepository",
-            "[SYNC-SKEW] Skew-window conflict(jobUrl=${localJob.jobUrl}): remote-updatedAt=${remoteJob.updatedAt}, local-updatedAt=${localJob.updatedAt}, delta=$delta"
+            SyncDiagnostics.TAG,
+            "[pull][skewWindowRemoteCheck] jobUrl=${SyncDiagnostics.redactJobUrl(localJob.jobUrl)} remoteUpdatedAt=${remoteJob.updatedAt} localUpdatedAt=${localJob.updatedAt} delta=$delta"
         )
 
         // Within skew window — updatedAt is the unified Long field; no secondary server timestamp
@@ -205,18 +368,12 @@ class SupabaseRepository(
         if (delta < -clockSkewToleranceMillis) return false
 
         Log.d(
-            "SupabaseRepository",
-            "[SYNC-SKEW] Skew-window upload check(jobUrl=${localJob.jobUrl}): local-updatedAt=${localJob.updatedAt}, remote-updatedAt=${remoteJob.updatedAt}, delta=$delta"
+            SyncDiagnostics.TAG,
+            "[pull][skewWindowUploadCheck] jobUrl=${SyncDiagnostics.redactJobUrl(localJob.jobUrl)} localUpdatedAt=${localJob.updatedAt} remoteUpdatedAt=${remoteJob.updatedAt} delta=$delta"
         )
 
         // Within skew window — no secondary server timestamp available, skip push to avoid oscillation.
         return false
-    }
-
-    enum class DeletePushResult {
-        SUCCESS,
-        NOT_FOUND,
-        RETRY
     }
 }
 

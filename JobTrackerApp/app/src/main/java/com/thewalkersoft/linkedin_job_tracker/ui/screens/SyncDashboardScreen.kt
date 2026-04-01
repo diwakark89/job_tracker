@@ -14,8 +14,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Schedule
@@ -23,11 +25,13 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -44,6 +48,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.thewalkersoft.linkedin_job_tracker.R
+import com.thewalkersoft.linkedin_job_tracker.ui.model.JobSyncFailureInfo
 import com.thewalkersoft.linkedin_job_tracker.ui.theme.UiPillBlue
 import com.thewalkersoft.linkedin_job_tracker.ui.theme.UiPillOnBlue
 import com.thewalkersoft.linkedin_job_tracker.viewmodel.JobViewModel
@@ -57,10 +62,12 @@ fun SyncDashboardScreen(
     cloudHealth: String,
     queueStatus: Int,
     lastSyncTime: Long?,
+    failedJobs: List<JobSyncFailureInfo>,
     isManualSyncRunning: Boolean,
     manualSyncUiState: JobViewModel.ManualSyncUiState,
     onNavigateBack: () -> Unit,
     onManualSyncClick: () -> Unit,
+    onJobClick: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -106,6 +113,12 @@ fun SyncDashboardScreen(
                 QueueStatusCard(queueStatus = queueStatus)
             }
 
+            if (failedJobs.isNotEmpty()) {
+                item {
+                    FailedJobsCard(failedJobs = failedJobs, onJobClick = onJobClick)
+                }
+            }
+
             // Active Syncs (if running)
             if (isManualSyncRunning) {
                 item {
@@ -126,6 +139,94 @@ fun SyncDashboardScreen(
             // Bottom spacing
             item {
                 Spacer(modifier = Modifier.height(16.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun FailedJobsCard(
+    failedJobs: List<JobSyncFailureInfo>,
+    onJobClick: (String) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(22.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer
+        )
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "Jobs with Sync Issues",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onErrorContainer
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "These jobs have the most recent stored sync failure reason.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.9f)
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            failedJobs.forEachIndexed { index, failedJob ->
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(role = Role.Button) { onJobClick(failedJob.jobId) },
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = failedJob.companyName,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.85f)
+                        )
+                    }
+
+                    if (failedJob.jobTitle.isNotBlank()) {
+                        Text(
+                            text = failedJob.jobTitle,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.92f)
+                        )
+                    }
+
+                    Text(
+                        text = failedJob.reason,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+
+                    Text(
+                        text = "Updated ${formatDetailedTime(failedJob.updatedAt)}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.82f)
+                    )
+                }
+
+                if (index != failedJobs.lastIndex) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.14f))
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
             }
         }
     }
@@ -619,3 +720,8 @@ private fun getRelativeTimeString(timestamp: Long): String {
     }
 }
 
+private fun formatDetailedTime(timestamp: Long): String {
+    val date = Date(timestamp)
+    val sdf = SimpleDateFormat("MMM dd, yyyy 'at' HH:mm:ss", Locale.getDefault())
+    return "${sdf.format(date)} (${getRelativeTimeString(timestamp)})"
+}

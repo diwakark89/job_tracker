@@ -11,6 +11,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.thewalkersoft.linkedin_job_tracker.data.JobEntity
 import com.thewalkersoft.linkedin_job_tracker.data.JobStatus
+import com.thewalkersoft.linkedin_job_tracker.ui.model.JobSyncFailureInfo
 import com.thewalkersoft.linkedin_job_tracker.ui.model.JobSyncDotState
 import com.thewalkersoft.linkedin_job_tracker.ui.screens.JobDetailsMissingScreen
 import com.thewalkersoft.linkedin_job_tracker.ui.screens.JobDetailsScreen
@@ -30,6 +31,8 @@ fun AppNavigation(
     message: String?,
     cloudHealth: String,
     jobSyncStateById: Map<String, JobSyncDotState>,
+    jobSyncFailureById: Map<String, JobSyncFailureInfo>,
+    syncFailureJobs: List<JobSyncFailureInfo>,
     isManualSyncRunning: Boolean,
     manualSyncProgressLabel: String,
     queueStatus: Int = 0,
@@ -115,6 +118,7 @@ fun AppNavigation(
             } else {
                 JobDetailsScreen(
                     job = job,
+                    syncFailure = jobSyncFailureById[job.id],
                     onNavigateBack = { navController.navigateUp() },
                     onStatusChange = { newStatus ->
                         onStatusChange(job, newStatus)
@@ -136,10 +140,14 @@ fun AppNavigation(
                 cloudHealth = cloudHealth,
                 queueStatus = queueStatus,
                 lastSyncTime = lastSyncTime,
+                failedJobs = syncFailureJobs,
                 isManualSyncRunning = isManualSyncRunning,
                 manualSyncUiState = manualSyncUiState,
                 onNavigateBack = { navController.navigateUp() },
-                onManualSyncClick = onManualSyncClick
+                onManualSyncClick = onManualSyncClick,
+                onJobClick = { jobId ->
+                    navController.navigate(Screen.JobDetails.createRoute(jobId))
+                }
             )
         }
     }
@@ -177,6 +185,8 @@ fun AppNavigationPreview() {
             message = null,
             cloudHealth = "Offline",
             jobSyncStateById = emptyMap(),
+            jobSyncFailureById = emptyMap(),
+            syncFailureJobs = emptyList(),
             isManualSyncRunning = false,
             manualSyncProgressLabel = "",
             onSearchQueryChange = { _ -> },

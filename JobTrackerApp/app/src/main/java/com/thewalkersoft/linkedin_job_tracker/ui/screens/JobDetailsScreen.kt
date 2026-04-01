@@ -28,6 +28,7 @@ import com.thewalkersoft.linkedin_job_tracker.data.JobStatus
 import com.thewalkersoft.linkedin_job_tracker.data.displayName
 import com.thewalkersoft.linkedin_job_tracker.R
 import com.thewalkersoft.linkedin_job_tracker.ui.components.EditJobDialog
+import com.thewalkersoft.linkedin_job_tracker.ui.model.JobSyncFailureInfo
 import com.thewalkersoft.linkedin_job_tracker.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -36,6 +37,7 @@ import java.util.*
 @Composable
 fun JobDetailsScreen(
     job: JobEntity,
+    syncFailure: JobSyncFailureInfo? = null,
     onNavigateBack: () -> Unit,
     onStatusChange: (JobStatus) -> Unit,
     onOpenUrl: (String) -> Unit,
@@ -150,6 +152,10 @@ fun JobDetailsScreen(
                 }
             }
 
+            if (syncFailure != null) {
+                LastSyncIssueCard(syncFailure = syncFailure)
+            }
+
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = "LinkedIn URL",
@@ -254,6 +260,43 @@ fun JobDetailsScreen(
     }
 }
 
+@Composable
+private fun LastSyncIssueCard(syncFailure: JobSyncFailureInfo) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = "Last Sync Issue",
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.errorContainer
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = syncFailure.reason,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onErrorContainer
+                )
+
+                Text(
+                    text = "Updated ${formatTimestampWithRelative(syncFailure.updatedAt)}",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.9f)
+                )
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun StatusChipLarge(
@@ -302,6 +345,19 @@ private fun StatusChipLarge(
 private fun formatTimestamp(timestamp: Long): String {
     val sdf = SimpleDateFormat("MMM dd, yyyy 'at' hh:mm a", Locale.getDefault())
     return sdf.format(Date(timestamp))
+}
+
+private fun formatTimestampWithRelative(timestamp: Long): String {
+    val absolute = SimpleDateFormat("MMM dd, yyyy 'at' hh:mm a", Locale.getDefault()).format(Date(timestamp))
+    val diff = System.currentTimeMillis() - timestamp
+    val relative = when {
+        diff < 60_000 -> "just now"
+        diff < 3_600_000 -> "${diff / 60_000} min ago"
+        diff < 86_400_000 -> "${diff / 3_600_000} hours ago"
+        diff < 604_800_000 -> "${diff / 86_400_000} days ago"
+        else -> "${diff / 604_800_000} weeks ago"
+    }
+    return "$absolute ($relative)"
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -353,6 +409,14 @@ fun JobDetailsScreenPreview() {
                 jobDescription = "Software Engineer position at Google. This is a sample job description. The ideal candidate will have experience with Kotlin, Jetpack Compose, and Android development. They should also be familiar with modern Android development practices and have a passion for creating beautiful and performant user interfaces.",
                 status = JobStatus.APPLIED,
                 createdAt = System.currentTimeMillis()
+            ),
+            syncFailure = JobSyncFailureInfo(
+                jobId = "job-details-preview",
+                companyName = "Google",
+                jobTitle = "",
+                jobUrl = "https://careers.google.com/jobs/results/12345/",
+                reason = "pushJob: HTTP 409: duplicate key value violates unique constraint",
+                updatedAt = System.currentTimeMillis() - 120_000L
             ),
             onNavigateBack = {},
             onStatusChange = {},
