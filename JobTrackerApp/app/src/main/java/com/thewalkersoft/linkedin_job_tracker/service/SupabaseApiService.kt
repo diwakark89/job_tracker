@@ -13,13 +13,12 @@ interface SupabaseApiService {
     @GET("rest/v1/jobs")
     suspend fun getJobs(
         @Query("select") select: String = "*",
-        @Query("order") order: String = "timestamp.desc"
+        @Query("order") order: String = "created_at.desc"
     ): List<JobEntity>
 
     @POST("rest/v1/jobs")
     suspend fun upsertJob(
         @Body jobs: List<JobEntity>,
-        // Phase 1: conflict on canonical snake_case unique constraint (jobs_job_url_key)
         @Query("on_conflict") onConflict: String = "job_url",
         @Header("Prefer") prefer: String = "resolution=merge-duplicates"
     ): Response<Unit>
@@ -41,4 +40,3 @@ data class SharedLinkRequest(
     val source: String = "android-share-intent",
     val status: String = "Pending"
 )
-

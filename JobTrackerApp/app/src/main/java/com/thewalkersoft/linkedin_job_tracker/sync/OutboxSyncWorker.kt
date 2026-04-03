@@ -89,9 +89,7 @@ class OutboxSyncWorker(
                     } else {
                         val result = repository.pushDelete(jobId, operation.jobUrl)
                         if (result.acknowledged) {
-                            // Intent: keep backward compatibility for pre-tombstone queued DELETE operations.
-                            // Tradeoff: legacy hard-delete replay can remove rows that now prefer tombstone semantics.
-                            // Invariant: delete replay remains idempotent; NOT_FOUND is terminal success.
+                            // Delete replay remains idempotent; NOT_FOUND is terminal success.
                             preferences.clearLastSyncFailureReason(operation.jobUrl)
                             preferences.acknowledgeOperation(operation.key)
                             Log.d(

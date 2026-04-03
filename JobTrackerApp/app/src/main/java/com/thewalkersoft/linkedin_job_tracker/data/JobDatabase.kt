@@ -256,8 +256,6 @@ abstract class JobDatabase : RoomDatabase() {
         //   - Rename timestamp (Long) -> createdAt (Long)
         //   - Rename lastModified (Long) -> updatedAt (Long)
         //   - Drop old createdAt TEXT and updatedAt TEXT columns (were ISO-string server timestamps)
-        //   Supabase: @SerializedName("timestamp") on createdAt and @SerializedName("lastModified")
-        //   on updatedAt maintain Phase 1 wire-compatibility with Supabase camelCase bigint columns.
         val MIGRATION_7_8 = object : Migration(7, 8) {
             override fun migrate(database: SupportSQLiteDatabase) {
                 database.execSQL(

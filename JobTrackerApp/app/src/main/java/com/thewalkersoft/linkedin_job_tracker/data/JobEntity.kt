@@ -12,23 +12,29 @@ import androidx.room.PrimaryKey
 data class JobEntity(
     @PrimaryKey
     val id: String,
+    @SerializedName("company_name")
     val companyName: String,
+    @SerializedName("job_url")
     val jobUrl: String,
+    @SerializedName("description")
     val jobDescription: String,
+    @SerializedName("role_title")
     val jobTitle: String = "",
     val status: JobStatus = JobStatus.SAVED,
-    /** Creation time in epoch millis. Serialised as "timestamp" for Phase 1 Supabase compat. */
-    @SerializedName("timestamp")
+    @SerializedName("created_at")
     val createdAt: Long = System.currentTimeMillis(),
-    /** Last-modified time in epoch millis. Serialised as "lastModified" for Phase 1 Supabase compat. */
-    @SerializedName("lastModified")
+    @SerializedName("modified_at")
     val updatedAt: Long = System.currentTimeMillis(),
     @SerializedName("is_deleted")
     val isDeleted: Boolean = false,
+    @SerializedName("match_score")
     val matchScore: Int? = null,
     val language: String = "English",
+    @SerializedName("prep_notes")
     val prepNotes: String? = null,
+    @SerializedName("source_platform")
     val sourcePlatform: String? = null,
+    @SerializedName("filter_reason")
     val filterReason: String? = null
 )
 
@@ -56,8 +62,5 @@ fun JobStatus.displayName(): String {
 
 fun parseJobStatus(value: String): JobStatus {
     val normalized = value.trim().uppercase().replace("-", "_").replace(" ", "_")
-    return when (normalized) {
-        "REJECTED" -> JobStatus.RESUME_REJECTED
-        else -> runCatching { JobStatus.valueOf(normalized) }.getOrDefault(JobStatus.SAVED)
-    }
+    return runCatching { JobStatus.valueOf(normalized) }.getOrDefault(JobStatus.SAVED)
 }
