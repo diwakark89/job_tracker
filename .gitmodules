@@ -4,3 +4,6 @@
 [submodule "job_search_mcp_server"]
 	path = job_search_mcp_server
 	url = https://github.com/diwakark89/job_search_mcp_server.git
+[submodule "job_search_orchestrator"]
+	path = job_search_orchestrator
+	url = https://github.com/diwakark89/job_search_orchestrator.git
